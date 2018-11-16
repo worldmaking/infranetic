@@ -63,12 +63,14 @@ class ArrayFromImg {
 	constructor(path) {
 		let self = this;
 		let img = new Image();   // Create new img element
+		this.canvas = new OffscreenCanvas(64, 64);
 		img.onload = function() {
 			self.width = this.width;
 			self.height = this.height;
+			self.canvas.width = self.width;
+			self.canvas.height = self.height;
 			let length = this.width * this.height;
-			let canvas = new OffscreenCanvas(this.width, this.height);
-			let ctx = canvas.getContext("2d");
+			let ctx = self.canvas.getContext("2d");
 			ctx.drawImage(this, 0, 0);
 			let imgdata = ctx.getImageData(0, 0, this.width, this.height);
 			let binary = new Uint8ClampedArray(imgdata.data.buffer);
@@ -76,9 +78,7 @@ class ArrayFromImg {
 			for (let i=0; i<length; i++) {
 				data[i] = 1. - (binary[i*4+2] / 255);
 			}
-			self.canvas = canvas;
 			self.data = data;
-			console.log(self);
 		}
 		img.src = path; // Set source path
 	}
