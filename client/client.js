@@ -43,6 +43,83 @@ function resize() {
 	}
 }
 
+
+let program_agents = makeProgramFromCode(gl,
+`#version 300 es
+in vec2 a_position;
+uniform mat3 u_matrix;
+void main() {
+	gl_Position = vec4((u_matrix * vec3(a_position / vec2(3000, 2000), 1)).xy, 0, 1);
+	gl_PointSize = 3.0;
+}
+`, 
+`#version 300 es
+precision mediump float;
+out vec4 outColor;
+void main() {
+	outColor = vec4(0.5, 0, 0.5, 1);
+}
+`);
+
+let agentsVao = {
+	id: gl.createVertexArray(),
+	positions: new Float32Array(numagents * 2),
+	positionBuffer: gl.createBuffer(),
+
+	submit(data) {
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, 0, gl.DYNAMIC_DRAW);
+		gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+		//gl.bindBuffer(gl.ARRAY_BUFFER, null); // done.
+		return this;
+	},
+
+	create(gl, program) {
+		this.bind();
+
+		this.submit(this.positions);
+
+		// look up in the shader program where the vertex attributes need to go.
+		let positionAttributeLocation = gl.getAttribLocation(program, "a_position");
+		// Turn on the attribute
+		gl.enableVertexAttribArray(positionAttributeLocation);
+		// Tell the attribute which buffer to use
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+		// Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+		let size = 2;          // 2 components per iteration
+		let type = gl.FLOAT;   // the data is 32bit floats
+		let normalize = false; // don't normalize the data
+		let stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
+		let offset = 0;        // start at the beginning of the buffer
+		gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset);
+		// done with buffer:
+		gl.bindBuffer(gl.ARRAY_BUFFER, null);
+		this.unbind();
+		return this;
+	},
+
+	bind() {
+		gl.bindVertexArray(this.id);
+		return this;
+	},
+	
+	unbind() {
+		gl.bindVertexArray(this.id, null);
+		return this;
+	},
+
+	//bind first
+	draw() {
+		// draw
+		let primitiveType = gl.POINTS;
+		let offset = 0;
+		let count = this.positions.length/2;
+		gl.drawArrays(primitiveType, offset, count);
+		return this;
+	},
+}
+	
+
 let focus = [world.size[0]*1/3, world.size[1]*1/3];
 let zoom = 1;
 
@@ -53,14 +130,35 @@ function update() {
 		for (let a of agents) {
 			a.update(world);
 		}
-		for (let a of agents) {
+		let positions = agentsVao.positions;
+		for (let i=0; i<agents.length; i++) {
+			let a = agents[i];
 			a.move(world);
+
+			positions[i*2] = a.pos[0];
+			positions[i*2+1] = a.pos[1];
 		}
+		//agentsVao
 	}
 
-	// copy offscreen:
+	
+
+	let gl = glcanvas.getContext("webgl2");
+	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+  	gl.clearColor(1, 1, 1, 1); // background colour
+	gl.clear(gl.COLOR_BUFFER_BIT);
+
+	let viewmat = [
+      2, 0, 0,
+      0, 2, 0,
+      -1, -1, 1
+    ];
+	gl.useProgram(program_agents);
+	gl.uniformMatrix3fv(gl.getUniformLocation(program_agents, "u_matrix"), false, viewmat);
+	agentsVao.bind().submit(agentsVao.positions).draw();
+
 	let ctx = offscreen.getContext("2d");
-	ctx.fillStyle = "hsl(0, 0%, 100%, 1%)"
+	ctx.fillStyle = "hsl(0, 0%, 100%, 100%)"
 	ctx.fillRect(0, 0, offscreen.width, offscreen.height);
 
 	if (1) {
@@ -86,7 +184,7 @@ function update() {
 		ctx.translate(-focus[0], -focus[1])
 		
 		//ctx.drawImage(world.grass.canvas, 0, 0);
-		ctx.drawImage(offscreen, 0, 0);
+		ctx.drawImage(glcanvas, 0, 0);
 
 		
 	}
@@ -119,6 +217,7 @@ window.addEventListener("keyup", function(event) {
 
 /////////////////////////////////////////////////////////////
 
+agentsVao.create(gl, program_agents);
 
 for (let i=0; i<numagents; i++) {
 	agents.push(new Agent(i, world))

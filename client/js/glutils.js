@@ -1,6 +1,46 @@
 
+// utility to help turn shader code into a shader object:
+function createShader(gl, type, source) {
+    let shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    let success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+    if (success) {
+        return shader;
+    }
+    console.error("shader compile error", gl.getShaderInfoLog(shader));
+    gl.deleteShader(shader);
+    return undefined;
+}
+  
+// utility to turn shader objects into a GPU-loaded shader program
+// uses the most common case a program of 1 vertex and 1 fragment shader:
+function createProgram(gl, vertexShader, fragmentShader) {
+    let program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    let success = gl.getProgramParameter(program, gl.LINK_STATUS);
+    if (success) {
+        return program;
+    }
+    console.error("shader program error", gl.getProgramInfoLog(program));  
+    gl.deleteProgram(program);
+    return undefined;
+}
+
+// combine above functions to create a program from GLSL code:
+function makeProgramFromCode(gl, vertexCode, fragmentCode) {
+    // create GLSL shaders, upload the GLSL source, compile the shaders
+    let vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexCode);
+    let fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentCode);
+    // Link the two shaders into a program
+    return createProgram(gl, vertexShader, fragmentShader);
+}
+
+
 // create a GPU buffer to hold some vertex data:
-function makeBuffer(vertices) {
+function makeBuffer(gl, vertices) {
     let positionBuffer = gl.createBuffer();
     // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
@@ -9,7 +49,7 @@ function makeBuffer(vertices) {
     return positionBuffer;
 }
 
-function createPixelTexture(width, height, floatingpoint=false) {
+function createPixelTexture(gl, width, height, floatingpoint=false) {
 
     floatingpoint =  floatingpoint && (!!gl.getExtension("EXT_color_buffer_float"));
     console.log("texture floating?", floatingpoint);
@@ -72,7 +112,7 @@ function createPixelTexture(width, height, floatingpoint=false) {
     return tex.unbind();
 }
 
-function createFBO(width, height, floatingpoint=false) {
+function createFBO(gl, width, height, floatingpoint=false) {
     let id = gl.createFramebuffer();
     console.log("FBO floating?", floatingpoint);
 
@@ -115,75 +155,75 @@ function createFBO(width, height, floatingpoint=false) {
     return fbo;
 }
 
-// Create a vertex array object (holds attribute state)
-let vaoQuod = {
-    id: gl.createVertexArray(),
+// // Create a vertex array object (holds attribute state)
+// let vaoQuod = {
+//     id: gl.createVertexArray(),
     
-    create(program) {
-        this.bind();
-        {
-            this.positionBuffer = makeBuffer([
-                -1,  1,  -1, -1,   1, -1,
-                -1,  1,   1, -1,   1,  1
-            ]);
-            // look up in the shader program where the vertex attributes need to go.
-            let positionAttributeLocation = gl.getAttribLocation(program, "a_position");
-            // Turn on the attribute
-            gl.enableVertexAttribArray(positionAttributeLocation);
-            // Tell the attribute which buffer to use
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-            // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
-            let size = 2;          // 2 components per iteration
-            let type = gl.FLOAT;   // the data is 32bit floats
-            let normalize = false; // don't normalize the data
-            let stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
-            let offset = 0;        // start at the beginning of the buffer
-            gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset);
-            // done with buffer:
-            gl.bindBuffer(gl.ARRAY_BUFFER, null);
-        }
-        {
-            this.texcoordBuffer = makeBuffer([
-                0, 1,  0, 0,   1, 0,
-                0, 1,  1, 0,   1, 1
-            ]);
-            // look up in the shader program where the vertex attributes need to go.
-            let positionAttributeLocation = gl.getAttribLocation(program, "a_texCoord");
-            // Turn on the attribute
-            gl.enableVertexAttribArray(positionAttributeLocation);
-            // Tell the attribute which buffer to use
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.texcoordBuffer);
-            // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
-            let size = 2;          // 2 components per iteration
-            let type = gl.FLOAT;   // the data is 32bit floats
-            let normalize = false; // don't normalize the data
-            let stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
-            let offset = 0;        // start at the beginning of the buffer
-            gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset);
-            // done with buffer:
-            gl.bindBuffer(gl.ARRAY_BUFFER, null);
-        }
-        this.unbind();
-        return this;
-    },
+//     create(program) {
+//         this.bind();
+//         {
+//             this.positionBuffer = makeBuffer([
+//                 -1,  1,  -1, -1,   1, -1,
+//                 -1,  1,   1, -1,   1,  1
+//             ]);
+//             // look up in the shader program where the vertex attributes need to go.
+//             let positionAttributeLocation = gl.getAttribLocation(program, "a_position");
+//             // Turn on the attribute
+//             gl.enableVertexAttribArray(positionAttributeLocation);
+//             // Tell the attribute which buffer to use
+//             gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+//             // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+//             let size = 2;          // 2 components per iteration
+//             let type = gl.FLOAT;   // the data is 32bit floats
+//             let normalize = false; // don't normalize the data
+//             let stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
+//             let offset = 0;        // start at the beginning of the buffer
+//             gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset);
+//             // done with buffer:
+//             gl.bindBuffer(gl.ARRAY_BUFFER, null);
+//         }
+//         {
+//             this.texcoordBuffer = makeBuffer([
+//                 0, 1,  0, 0,   1, 0,
+//                 0, 1,  1, 0,   1, 1
+//             ]);
+//             // look up in the shader program where the vertex attributes need to go.
+//             let positionAttributeLocation = gl.getAttribLocation(program, "a_texCoord");
+//             // Turn on the attribute
+//             gl.enableVertexAttribArray(positionAttributeLocation);
+//             // Tell the attribute which buffer to use
+//             gl.bindBuffer(gl.ARRAY_BUFFER, this.texcoordBuffer);
+//             // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+//             let size = 2;          // 2 components per iteration
+//             let type = gl.FLOAT;   // the data is 32bit floats
+//             let normalize = false; // don't normalize the data
+//             let stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
+//             let offset = 0;        // start at the beginning of the buffer
+//             gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset);
+//             // done with buffer:
+//             gl.bindBuffer(gl.ARRAY_BUFFER, null);
+//         }
+//         this.unbind();
+//         return this;
+//     },
     
-    bind() {
-        gl.bindVertexArray(this.id);
-        return this;
-    },
+//     bind() {
+//         gl.bindVertexArray(this.id);
+//         return this;
+//     },
     
-    unbind() {
-        gl.bindVertexArray(this.id, null);
-        return this;
-    },
+//     unbind() {
+//         gl.bindVertexArray(this.id, null);
+//         return this;
+//     },
     
-    //bind first
-    draw() {
-        // draw
-        let primitiveType = gl.TRIANGLES;
-        let offset = 0;
-        let count = 6;
-        gl.drawArrays(primitiveType, offset, count);
-        return this;
-    },
-}
+//     //bind first
+//     draw() {
+//         // draw
+//         let primitiveType = gl.TRIANGLES;
+//         let offset = 0;
+//         let count = 6;
+//         gl.drawArrays(primitiveType, offset, count);
+//         return this;
+//     },
+// }
