@@ -15,7 +15,9 @@
     "start": "nodemon server.js"
   },
   "nodemonConfig": {
-    "ignore": ["docs/*"]
+    "ignore": [
+      "docs/*"
+    ]
   },
   "repository": {
     "type": "git",
