@@ -15,9 +15,9 @@ class Agent {
 
     update(world) {
 
-        let g = world.grass.read(this.pos[0] * world.norm[0], this.pos[1] * world.norm[1])
+        let g = world.grass.read(this.pos[0], this.pos[1])
         this.size = g > 0 ? 3 : 1;
-        this.speed = 10; // meters per frame
+        this.speed = 10 * world.pixels_per_meter; // pixels per frame
         vec2.random(this.vel, this.speed);
     }
 

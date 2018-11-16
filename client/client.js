@@ -1,25 +1,31 @@
 
-let world = {
-	size: [34976, 23376], // meters
+const world = {
+	meters: [34976, 23376], // meters
+	size: [3231, 2160], // pixels
+	aspect: 34976/23376,
+	meters_per_pixel: 23376 / 2160,
+	pixels_per_meter: 2160 / 23376, 
+	norm: [1/3231, 1/2160],
 
 	grass: new ArrayFromImg('img/grass.png'),
 };
-world.aspect = world.size[0]/world.size[1];
+world.aspect = world.meters[0]/world.meters[1];
+world.size[0] = world.size[1] * world.aspect;
+world.meters_per_pixel = world.meters[1] / world.size[1];
+world.pixels_per_meter = 1/world.meters_per_pixel;
 world.norm = [1/world.size[0], 1/world.size[1]];
 
+const numagents = 20000;
 let agents = [];
 
 let fps = new FPS();
 let running = true;
 
 let canvas = document.getElementById("canvas");
-const canvas_height = 2160; // pixels
-const canvas_width = canvas_height * world.aspect;
-canvas.width = canvas_width;
-canvas.height = canvas_height; 
-const meters_per_pixel = world.size[1] / canvas_height;
-let offscreen = new OffscreenCanvas(canvas_width, canvas_height);
-let glcanvas = new OffscreenCanvas(canvas_width, canvas_height);
+canvas.width = world.size[0];
+canvas.height = world.size[1]; 
+let offscreen = new OffscreenCanvas(world.size[0], world.size[1]);
+let glcanvas = new OffscreenCanvas(world.size[0], world.size[1]);
 let gl = glcanvas.getContext("webgl2");
 if (!gl) {
   console.error("unable to acquire webgl2 context");
@@ -61,19 +67,16 @@ function update() {
 	let ctx = canvas.getContext("2d");
 	ctx.drawImage(offscreen, 0, 0);
 
-	// switch to meters:
-	ctx.save();
+	// draw as 2d:
 	{
-		ctx.scale(1/meters_per_pixel, 1/meters_per_pixel);
-		ctx.lineWidth = meters_per_pixel;
+		ctx.lineWidth = 1;
 
 		ctx.fillStyle = "purple"
-		let size = meters_per_pixel * 3;
-		for (let a of agents) {
+		let size = 3;
+		for ( let a of agents) {
 			ctx.fillRect(a.pos[0], a.pos[1], size * a.size, size * a.size);
 		}
 	}
-	ctx.restore();
 
 	fps.tick();
 	document.getElementById("fps").textContent = Math.floor(fps.fps);
@@ -105,7 +108,7 @@ img2canvas('img/grass.png', offscreen);
 
 
 
-for (let i=0; i<10000; i++) {
+for (let i=0; i<numagents; i++) {
 	agents.push(new Agent(i, world))
 }
 

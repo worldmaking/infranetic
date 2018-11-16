@@ -58,6 +58,7 @@ class FPS {
 	}
 };
 
+// loads an image and turns it into a typedarray and offscreen canvas
 class ArrayFromImg {
 	constructor(path) {
 		let self = this;
@@ -82,11 +83,11 @@ class ArrayFromImg {
 		img.src = path; // Set source path
 	}
 
-	// normalized coordinates:
+	
 	read(x, y) {
 		if (!this.data) return 0;
 
-		let idx = Math.floor(x * this.width) + Math.floor(y * this.height) * this.width;
+		let idx = Math.floor(x) + Math.floor(y) * this.width;
 		return this.data[idx];
 	}
 };
