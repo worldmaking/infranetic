@@ -15,7 +15,7 @@ world.meters_per_pixel = world.meters[1] / world.size[1];
 world.pixels_per_meter = 1/world.meters_per_pixel;
 world.norm = [1/world.size[0], 1/world.size[1]];
 
-const numagents = 10000;
+const numagents = 30000;
 let agents = [];
 
 let fps = new FPS();
@@ -26,13 +26,15 @@ canvas.width = world.size[0];
 canvas.height = world.size[1]; 
 let offscreen = new OffscreenCanvas(world.size[0], world.size[1]);
 let glcanvas = document.createElement("canvas");
-glcanvas.width = canvas.width;
-glcanvas.height = canvas.height;
-//new OffscreenCanvas(world.size[0], world.size[1]);
-let gl = glcanvas.getContext("webgl2");
+let gl = glcanvas.getContext("webgl2", {
+	antialias: true,
+	alpha: true
+});
 if (!gl) {
   console.error("unable to acquire webgl2 context");
 }
+gl.canvas.width = canvas.width;
+gl.canvas.height = canvas.height;
 
 function resize() {
 	let window_aspect = window.innerWidth/window.innerHeight;
@@ -52,8 +54,8 @@ let program_agents = makeProgramFromCode(gl,
 in vec2 a_position;
 uniform mat3 u_matrix;
 void main() {
-	gl_Position = vec4((u_matrix * vec3(a_position / vec2(3000, 2000), 1)).xy, 0, 1);
-	gl_PointSize = 3.0;
+	gl_Position = vec4((u_matrix * vec3(a_position.xy, 1)).xy, 0, 1);
+	gl_PointSize = 1.0;
 }
 `, 
 `#version 300 es
@@ -73,7 +75,7 @@ let agentsVao = {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, 0, gl.DYNAMIC_DRAW);
 		gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
-		//gl.bindBuffer(gl.ARRAY_BUFFER, null); // done.
+		gl.bindBuffer(gl.ARRAY_BUFFER, null); // done.
 		return this;
 	},
 
@@ -141,39 +143,25 @@ function update() {
 			positions[i*2] = a.pos[0];
 			positions[i*2+1] = a.pos[1];
 		}
-		//agentsVao
 	}
-
-	
 
 	let gl = glcanvas.getContext("webgl2");
 	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-  	gl.clearColor(1, 1, 1, 1); // background colour
-	gl.clear(gl.COLOR_BUFFER_BIT);
+  	gl.clearColor(1, 1, 1, 0.99); // background colour
+	//gl.clear(gl.COLOR_BUFFER_BIT);
 
 	let viewmat = [
-      2, 0, 0,
-      0, 2, 0,
-      -1, -1, 1
+      2/gl.canvas.width, 0, 0,
+      0, -2/gl.canvas.height, 0,
+      -1, 1, 1
     ];
 	gl.useProgram(program_agents);
 	gl.uniformMatrix3fv(gl.getUniformLocation(program_agents, "u_matrix"), false, viewmat);
 	agentsVao.bind().submit(agentsVao.positions).draw();
 
 	let ctx = offscreen.getContext("2d");
-	ctx.fillStyle = "hsl(0, 0%, 100%, 100%)"
+	ctx.fillStyle = "hsl(0, 0%, 100%, 5%)"
 	ctx.fillRect(0, 0, offscreen.width, offscreen.height);
-
-	if (1) {
-		ctx.lineWidth = 1;
-
-		ctx.fillStyle = "purple"
-		let size = 2;
-		for ( let a of agents) {
-			ctx.fillRect(a.pos[0]-1, a.pos[1]-1, size, size);
-			ctx.fillRect(a.pos[0]+a.fwd[0]-1, a.pos[1]+a.fwd[1]-1, size, size);
-		}
-	}
 
 	ctx = canvas.getContext("2d");
 	ctx.save();
@@ -186,7 +174,7 @@ function update() {
 		//ctx.translate(world.size[0]/2, world.size[1]/2)
 		ctx.translate(-focus[0], -focus[1])
 		
-		//ctx.drawImage(world.grass.canvas, 0, 0);
+		ctx.drawImage(world.grass.canvas, 0, 0);
 		ctx.drawImage(gl.canvas, 0, 0);
 
 		
