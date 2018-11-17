@@ -31,7 +31,11 @@ let gl = glcanvas.getContext("webgl2", {
 	alpha: true
 });
 if (!gl) {
-  console.error("unable to acquire webgl2 context");
+	alert("Browser error: unable to acquire webgl2 context");
+}
+const ext = gl.getExtension("EXT_color_buffer_float");
+if (!ext) {
+	alert("Browser error: need EXT_color_buffer_float");
 }
 gl.canvas.width = canvas.width;
 gl.canvas.height = canvas.height;
@@ -176,6 +180,9 @@ function update() {
 		fbo.begin();
 		{
 			gl.clear(gl.COLOR_BUFFER_BIT);
+
+			// feedback:
+
 			//gl.activeTexture(gl.TEXTURE0 + 1);
 			//gl.bindTexture(gl.TEXTURE_2D, chan1.id);
 			gl.activeTexture(gl.TEXTURE0 + 0);
@@ -184,6 +191,8 @@ function update() {
 			gl.useProgram(program_showtex);
 			gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), 1, 1, 1, 0.999);
 			glQuad.bind().draw();
+
+			// new data:
 			
 			let viewmat = [
 				2/gl.canvas.width, 0, 0,
@@ -205,7 +214,9 @@ function update() {
     gl.bindTexture(gl.TEXTURE_2D, fbo.front.id);
 	gl.useProgram(program_showtex);
 	gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), 1, 1, 1, 1);
-    glQuad.bind().draw();
+	glQuad.bind().draw();
+	
+	// fbo.bind().readPixels(); // SLOW!!!
 
 	
 
@@ -217,9 +228,8 @@ function update() {
 		ctx.scale(zoom, zoom);
 		ctx.translate(-focus[0], -focus[1])
 		
-		//ctx.drawImage(world.grass.canvas, 0, 0);
+		ctx.drawImage(world.grass.canvas, 0, 0);
 		ctx.drawImage(gl.canvas, 0, 0);
-
 		
 	}
 	ctx.restore();

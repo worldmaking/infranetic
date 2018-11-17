@@ -48,7 +48,7 @@ class Agent {
         if (Math.abs(turn) < 0.001) {
             turn = 0.5*(Math.random() - 0.5);
         }
-        this.dir += turn * Math.random();
+        this.dir += -turn * Math.random();
 
         vec2.set(this.fwd, Math.cos(this.dir), Math.sin(this.dir))
         vec2.set(this.side, this.fwd[1], -this.fwd[0]);

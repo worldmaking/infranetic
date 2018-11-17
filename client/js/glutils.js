@@ -76,12 +76,6 @@ function createPixelTexture(gl, width, height, floatingpoint=false) {
             }
             return this;
         },
-
-        readPixelsFromAttachment(attachment = gl.COLOR_ATTACHMENT0) {
-            gl.readBuffer(attachment);
-            gl.readPixels(0, 0, this.width, this.height, this.format, this.dataType, this.data);
-            //log(glEnumToString(gl, attachment), data);
-        },
         
         // bind() first
         submit() {
@@ -148,6 +142,18 @@ function createFBO(gl, width, height, floatingpoint=false) {
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
             this.swap();
             gl.viewport(0, 0, canvas.width, canvas.height);
+        },
+
+
+
+        // reads the GPU memory back into this.data
+        // must bind() first!
+        // warning: can be slow
+        readPixels(attachment = gl.COLOR_ATTACHMENT0) {
+            if (!this.front.data) this.front.allocate();
+            gl.readBuffer(attachment);
+            gl.readPixels(0, 0, this.front.width, this.front.height, this.front.format, this.front.dataType, this.front.data);
+            return this;
         },
     };
 
