@@ -15,7 +15,7 @@ world.meters_per_pixel = world.meters[1] / world.size[1];
 world.pixels_per_meter = 1/world.meters_per_pixel;
 world.norm = [1/world.size[0], 1/world.size[1]];
 
-const numagents = 30000;
+const numagents = 3000;
 let agents = [];
 
 let fps = new FPS();
@@ -91,7 +91,7 @@ void main() {
 precision mediump float;
 out vec4 outColor;
 void main() {
-	outColor = vec4(0.5, 0, 0.5, 1);
+	outColor = vec4(0, 0.5, 1, 1);
 }
 `);
 
@@ -172,58 +172,49 @@ function update() {
 			positions[i*2] = a.pos[0];
 			positions[i*2+1] = a.pos[1];
 		}
+
+		fbo.begin();
+		{
+			gl.clear(gl.COLOR_BUFFER_BIT);
+			//gl.activeTexture(gl.TEXTURE0 + 1);
+			//gl.bindTexture(gl.TEXTURE_2D, chan1.id);
+			gl.activeTexture(gl.TEXTURE0 + 0);
+			gl.bindTexture(gl.TEXTURE_2D, fbo.front.id);
+			//gl.bindTexture(gl.TEXTURE_2D, chan1.id);
+			gl.useProgram(program_showtex);
+			gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), 1, 1, 1, 0.999);
+			glQuad.bind().draw();
+			
+			let viewmat = [
+				2/gl.canvas.width, 0, 0,
+				0, -2/gl.canvas.height, 0,
+				-1, 1, 1
+			];
+			gl.useProgram(program_agents);
+			gl.uniformMatrix3fv(gl.getUniformLocation(program_agents, "u_matrix"), false, viewmat);
+			agentsVao.bind().submit(agentsVao.positions).draw();
+		}
+		fbo.end(); 
 	}
 
-	
-	fbo.begin();
-    {
-		gl.clear(gl.COLOR_BUFFER_BIT);
-		//gl.activeTexture(gl.TEXTURE0 + 1);
-		//gl.bindTexture(gl.TEXTURE_2D, chan1.id);
-		gl.activeTexture(gl.TEXTURE0 + 0);
-		gl.bindTexture(gl.TEXTURE_2D, fbo.front.id);
-		//gl.bindTexture(gl.TEXTURE_2D, chan1.id);
-		gl.useProgram(program_showtex);
-		gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), 1, 1, 1, 0.99);
-		glQuad.bind().draw();
-		
-		let viewmat = [
-			2/gl.canvas.width, 0, 0,
-			0, -2/gl.canvas.height, 0,
-			-1, 1, 1
-		];
-		gl.useProgram(program_agents);
-		gl.uniformMatrix3fv(gl.getUniformLocation(program_agents, "u_matrix"), false, viewmat);
-		agentsVao.bind().submit(agentsVao.positions).draw();
-    }
-    fbo.end(); 
-	
 	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-	gl.clearColor(1, 1, 1, 0.99); // background colour
+	//gl.clearColor(1, 1, 1, 1); // background colour
   	gl.clear(gl.COLOR_BUFFER_BIT);
 
 	gl.activeTexture(gl.TEXTURE0 + 0);
     gl.bindTexture(gl.TEXTURE_2D, fbo.front.id);
-	//gl.bindTexture(gl.TEXTURE_2D, chan1.id);
 	gl.useProgram(program_showtex);
 	gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), 1, 1, 1, 1);
     glQuad.bind().draw();
 
 	
 
-	let ctx = offscreen.getContext("2d");
-	// ctx.fillStyle = "hsl(0, 0%, 100%, 100%)"
-	// ctx.fillRect(0, 0, offscreen.width, offscreen.height);
-
-	ctx = canvas.getContext("2d");
-	ctx.clearRect(0, 0, offscreen.width, offscreen.height);
+	let ctx = canvas.getContext("2d");
+	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 	ctx.save();
 	{
 		ctx.translate(focus[0], focus[1])
-
-		//ctx.translate(-world.size[0]/2, -world.size[1]/2)
 		ctx.scale(zoom, zoom);
-		//ctx.translate(world.size[0]/2, world.size[1]/2)
 		ctx.translate(-focus[0], -focus[1])
 		
 		//ctx.drawImage(world.grass.canvas, 0, 0);
