@@ -25,7 +25,10 @@ let canvas = document.getElementById("canvas");
 canvas.width = world.size[0];
 canvas.height = world.size[1]; 
 let offscreen = new OffscreenCanvas(world.size[0], world.size[1]);
-let glcanvas = new OffscreenCanvas(world.size[0], world.size[1]);
+let glcanvas = document.createElement("canvas");
+glcanvas.width = canvas.width;
+glcanvas.height = canvas.height;
+//new OffscreenCanvas(world.size[0], world.size[1]);
 let gl = glcanvas.getContext("webgl2");
 if (!gl) {
   console.error("unable to acquire webgl2 context");
@@ -184,7 +187,7 @@ function update() {
 		ctx.translate(-focus[0], -focus[1])
 		
 		//ctx.drawImage(world.grass.canvas, 0, 0);
-		ctx.drawImage(glcanvas, 0, 0);
+		ctx.drawImage(gl.canvas, 0, 0);
 
 		
 	}
