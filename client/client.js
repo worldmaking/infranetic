@@ -160,6 +160,10 @@ let agentsVao = {
 
 let focus = [world.size[0]*1/3, world.size[1]*1/3];
 let zoom = 1;
+function refocus() {
+	focus = pick(agents).pos;
+	zoom = (zoom == 1) ? 2 + Math.floor(Math.random() * 8) : 1;
+}
 
 function update() {
 	requestAnimationFrame(update);
@@ -236,6 +240,8 @@ function update() {
 
 	fps.tick();
 	document.getElementById("fps").textContent = Math.floor(fps.fps);
+
+	if (fps.t % (5*1000) < fps.dt) refocus();
 }
 
 
@@ -245,14 +251,13 @@ canvas.addEventListener("pointermove", function(event) {
 
 }, false);
 
+
 window.addEventListener("keyup", function(event) {
 	//print(event.key);
 	if (event.key == " ") {
 		running = !running;
 	} else if (event.key == "z") {
-		focus = pick(agents).pos;
-		
-		zoom = (zoom == 1) ? 2 + Math.floor(Math.random() * 8) : 1;
+		refocus();
 	} else if (event.key == "s") {
 		// `frame${frame.toString().padStart(5, '0')}.png`;
 		saveCanvasToPNG(canvas, "result");
