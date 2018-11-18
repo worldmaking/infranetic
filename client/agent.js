@@ -15,18 +15,21 @@ class Agent {
 
         this.size = 1;
         this.speed = 2 * world.pixels_per_meter; // pixels per frame
+
+        this.near = [];
     }
 
     update(world) {     
 
-        if (Math.random() < 0.00001) {
-            this.pos = vec2.fromValues(
-                Math.random() * world.size[0],
-                Math.random() * world.size[1]
-            );
-            return;
-        }
+        // if (Math.random() < 0.00001) {
+        //     this.pos = vec2.fromValues(
+        //         Math.random() * world.size[0],
+        //         Math.random() * world.size[1]
+        //     );
+        //     return;
+        // }
 
+        // sensing:
         let s1 = vec2.create();
         vec2.add(s1, this.pos, this.fwd);
         vec2.add(s1, s1, this.side);
@@ -51,6 +54,23 @@ class Agent {
         this.dir += turn * Math.random();
 
         vec2.set(this.fwd, Math.cos(this.dir), Math.sin(this.dir))
+
+        if (this.near.length > 1) {
+            for (let n of this.near) {
+                if (n == this) continue;
+                // just a dumb exmaple proof of concept:
+                // bounce away from each other
+                let rel = vec2.create();
+                vec2.sub(rel, this.pos, n.pos);
+                let d2 = vec2.dot(rel, rel);
+
+                let amt = 1/(1+d2);
+                vec2.normalize(rel, rel);
+                vec2.lerp(this.fwd, this.fwd, rel, amt);
+                vec2.set(this.side, this.fwd[1], -this.fwd[0]);
+            }
+        }
+
         vec2.set(this.side, this.fwd[1], -this.fwd[0]);
     }
 

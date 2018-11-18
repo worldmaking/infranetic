@@ -164,10 +164,10 @@ let agentsVao = {
 	
 
 let focus = [world.size[0]*1/3, world.size[1]*1/3];
-let zoom = 1;
+let zoom = 5;
 function refocus() {
 	focus = pick(agents).pos;
-	zoom = (zoom == 1) ? 2 + Math.floor(Math.random() * 8) : 1;
+	//zoom = (zoom == 1) ? 2 + Math.floor(Math.random() * 8) : 1;
 }
 
 function update() {
@@ -187,7 +187,7 @@ function update() {
 			positions[i*2] = a.pos[0];
 			positions[i*2+1] = a.pos[1];
 		}
-		
+
 		fbo.begin();
 		{
 			gl.clear(gl.COLOR_BUFFER_BIT);
