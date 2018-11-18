@@ -17,6 +17,11 @@ world.norm = [1/world.size[0], 1/world.size[1]];
 
 const numagents = 3000;
 let agents = [];
+let space = new SpaceHash({
+	width: world.size[0],
+	height: world.size[1],
+	cellSize: 100
+});
 
 let fps = new FPS();
 let running = true;
@@ -170,17 +175,19 @@ function update() {
 
 	if (running) {
 		for (let a of agents) {
+			let search_radius = 25;
+			a.near = space.searchUnique(a.pos, search_radius, 4);
 			a.update(world);
 		}
 		let positions = agentsVao.positions;
 		for (let i=0; i<agents.length; i++) {
 			let a = agents[i];
 			a.move(world);
-
+			space.updatePoint(a);
 			positions[i*2] = a.pos[0];
 			positions[i*2+1] = a.pos[1];
 		}
-
+		
 		fbo.begin();
 		{
 			gl.clear(gl.COLOR_BUFFER_BIT);
@@ -239,9 +246,8 @@ function update() {
 	ctx.restore();
 
 	fps.tick();
-	document.getElementById("fps").textContent = Math.floor(fps.fps);
-
-	if (fps.t % (5*1000) < fps.dt) refocus();
+	document.getElementById("fps").textContent = Math.floor(fps.fpsavg);
+	if (fps.t % 5 < fps.dt) refocus();
 }
 
 
@@ -269,7 +275,8 @@ window.addEventListener("keyup", function(event) {
 agentsVao.create(gl, program_agents);
 
 for (let i=0; i<numagents; i++) {
-	agents.push(new Agent(i, world))
+	agents.push(new Agent(i, world));
+	space.insertPoint(agents[i]);
 }
 
 let sock = new Socket({

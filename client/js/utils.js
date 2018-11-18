@@ -45,15 +45,20 @@ function img2canvas(path, canvas) {
 
 class FPS {
 	constructor() {
-		this.t = performance.now();
+		this.t = 0.001*performance.now();
 		this.fps = 60;
-		this.dt = 1000/this.fps;
+		this.dt = 1/this.fps;
+		this.dtavg = this.dt;
+		this.fpsavg = this.fps;
 	}
 
 	tick() {
-		let t1 = performance.now();
-		this.dt = t1-this.t;
-		this.fps += 0.1*((1000/this.dt) - this.fps);
+		let t1 = 0.001*performance.now();
+		this.dt = (t1-this.t);
+		this.fps = (1/this.dt);
+		let alpha = Math.min(1, Math.max(0.001, this.dtavg));
+		this.dtavg += alpha*(this.dt-this.dtavg);
+		this.fpsavg += alpha*(this.fps-this.fpsavg);
 		this.t = t1;
 	}
 };
