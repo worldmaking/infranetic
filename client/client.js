@@ -232,7 +232,7 @@ function update() {
 		ctx.scale(zoom, zoom);
 		ctx.translate(-focus[0], -focus[1])
 		
-		ctx.drawImage(world.grass.canvas, 0, 0);
+		//ctx.drawImage(world.grass.canvas, 0, 0);
 		ctx.drawImage(gl.canvas, 0, 0);
 		
 	}

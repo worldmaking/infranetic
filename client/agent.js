@@ -46,7 +46,7 @@ class Agent {
 
         let turn = g2-g1;
         if (Math.abs(turn) < 0.001) {
-            turn = 0.5*(Math.random() - 0.5);
+            turn = 0.25*(Math.random() - 0.5);
         }
         this.dir += turn * Math.random();
 
