@@ -17,9 +17,7 @@ class Agent {
         this.side = vec2.fromValues(this.fwd[1], -this.fwd[0]);
         this.dir = Math.atan2(this.fwd[1], this.fwd[0]);
 
-        this.scent = vec3.fromValues(
-            Math.random(), Math.random(), Math.random()
-        );
+        this.scent = vec3.fromValues( 0.5, 0.5, 0.5 );
 
         this.size = 1;
         this.speed = 2 * world.pixels_per_meter; // pixels per frame
@@ -38,17 +36,17 @@ class Agent {
         vec2.add(s2, this.pos, this.fwd);
         vec2.sub(s2, s2, this.side);
 
-        let g1 = world.grass.readDot(s1[0], s1[1], this.scent)
-        let g2 = world.grass.readDot(s2[0], s2[1], this.scent)
+        let g1 = world.ways.readDot(s1[0], s1[1], this.scent)
+        let g2 = world.ways.readDot(s2[0], s2[1], this.scent)
 
         let color = [0, 0, 0, 0];
-        world.grass.readInto(s1[0], s1[1], color);
+        world.ways.readInto(s1[0], s1[1], color);
         if (color[3] == 0) {
             this.reset();
             return;
         }
 
-        let dev = vec3.random(vec3.create(), 0.05)
+        let dev = vec3.random(vec3.create(), 0.01)
         vec2.add(this.scent, this.scent, dev);
         this.scent[0] = (this.scent[0] > 1) ? 1 : (this.scent[0] < 0) ? 0 : this.scent[0];
         this.scent[1] = (this.scent[1] > 1) ? 1 : (this.scent[1] < 0) ? 0 : this.scent[1];
@@ -88,10 +86,9 @@ class Agent {
     }
 
     move(world, t) {
-        let centre = [2000, 1500];
-        let r = vec2.distance(this.pos, centre) * 0.001;
+        let r = vec2.distance(this.pos, world.acc) * 0.002;
 
-        let p = (Math.cos(Math.PI * 1 * (t - r)) + 0.95);
+        let p = 0.8+(Math.cos((Math.PI * 0.5 * t) - r));
 
         this.pos[0] += (this.speed * p) * this.fwd[0];
         this.pos[1] += (this.speed * p) * this.fwd[1];

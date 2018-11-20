@@ -199,16 +199,17 @@ class SpaceHash {
 		return res;
 	}
 
-	// searches for entries within 'radius' distance of 'pos' = [x, y]
+	// searches for entries within 'radius' distance of 'self.pos' = [x, y]
 	// returns a list of what it finds
 	// list will be only approximately sorted by distance
 	// pos = o.pos, the list will include o
-	searchUnique(pos, dist, limit=Infinity) {
+	searchUnique(self, dist, limit=Infinity) {
+		const pos = self.pos;
 		const rCellSize = 1 / this.cellSize;
 		const ch = (pos[0] * rCellSize);
 		const cv = (pos[1] * rCellSize);
 		const dist2 = dist * dist;
-		var i, v, h, l, n, npos, shell, cell, relx, rely, d2;
+		var i, v, h, l, n, neighbour, npos, shell, cell, relx, rely, d2;
 		var res = [];
 		for (i=0; i<this.shells.length; i++) {
 			shell = this.shells[i];
@@ -218,14 +219,17 @@ class SpaceHash {
 			cell = this.cells[v * this.numCellsH + h];
 			l = cell.length;
 			for (n = 0; n < l; n++) {
+				neighbour = cell[n];
+				// skip self:
+				if (self == neighbour) continue;
 				// need this check, otherwise non-point objects 
 				// and objects near borders can appear multiple times
-				if (res.indexOf(cell[n]) !== -1) continue;
-				npos = cell[n].pos;
+				if (res.indexOf(neighbour) !== -1) continue;
+				npos = neighbour.pos;
 				relx = npos[0] - pos[0], rely = npos[1] - pos[1];
 				d2 = relx * relx + rely * rely;
 				if (d2 <= dist2) {
-					res.push(cell[n]);
+					res.push(neighbour);
           			if (res.length == limit) return res;
 				}
 			}

@@ -7,7 +7,10 @@ const world = {
 	pixels_per_meter: 2160 / 23376, 
 	norm: [1/3231, 1/2160],
 
-	grass: new ArrayFromImg('img/ways.png'),
+	// coordinates of the ACC in this space
+	acc: [2382, 1162],
+
+	ways: new ArrayFromImg('img/ways.png'),
 };
 world.aspect = world.meters[0]/world.meters[1];
 world.size[0] = world.size[1] * world.aspect;
@@ -15,22 +18,24 @@ world.meters_per_pixel = world.meters[1] / world.size[1];
 world.pixels_per_meter = 1/world.meters_per_pixel;
 world.norm = [1/world.size[0], 1/world.size[1]];
 
-const NUM_AGENTS = 3000;
+const NUM_AGENTS = 5000;
 const MAX_NUM_LINES = NUM_AGENTS*4;
 let agents = [];
 let space = new SpaceHash({
 	width: world.size[0],
 	height: world.size[1],
-	cellSize: 100
+	cellSize: 25
 });
 
 let fps = new FPS();
 let running = true;
 
+let showmap = false;
+let showgrid = false;
+
 let canvas = document.getElementById("canvas");
 canvas.width = world.size[0];
 canvas.height = world.size[1]; 
-let offscreen = new OffscreenCanvas(world.size[0], world.size[1]);
 let glcanvas = document.createElement("canvas");
 let gl = glcanvas.getContext("webgl2", {
 	antialias: true,
@@ -202,28 +207,24 @@ let agentsVao = {
 
 let linesVao = {
 	id: gl.createVertexArray(),
-	positions: new Float32Array(MAX_NUM_LINES*2),
-	positionBuffer: gl.createBuffer(),
+	positionBuffer: agentsVao.positionBuffer,
 
 	indices: new Uint16Array(MAX_NUM_LINES),
 	indexBuffer: gl.createBuffer(),
 
+	count: 0,
 
-	submit(positions, indices) {
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
-		gl.bindBuffer(gl.ARRAY_BUFFER, null); // done.
-	
-	
+
+	submit() {
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.DYNAMIC_DRAW);
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null); // done.
 		return this;
 	},
 
 	create(gl, program) {
 		this.bind();
-		this.submit(this.positions, this.indices);
+		this.submit();
 
 		// look up in the shader program where the vertex attributes need to go.
 		let attr = gl.getAttribLocation(program, "a_position");
@@ -254,15 +255,13 @@ let linesVao = {
 	},
 
 	//bind first
-	draw(count = 0) {
+	draw() {
 		// draw
 		let primitiveType = gl.LINES;
-		if (count <= 0) count = this.positions.length/2;
 		let offset = 0;
-		//gl.drawArrays(primitiveType, offset, count);
-	
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-		gl.drawElements(gl.LINES, count, gl.UNSIGNED_SHORT, 0);
+
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+		gl.drawElements(gl.LINES, this.count, gl.UNSIGNED_SHORT, 0);
 		return this;
 	},
 };
@@ -284,19 +283,14 @@ void main() {
 `);
 
 
-for (let i=0; i<linesVao.positions.length; i+=2) {
-	let p = i/linesVao.positions.length;
-	linesVao.positions[i] = Math.cos(p * Math.PI * 2);
-	linesVao.positions[i+1] =  Math.sin(p * Math.PI * 2);
-}
 for (let i=0; i<linesVao.indices.length; i++) {
-	linesVao.indices[i] = i;
+	linesVao.indices[i] = Math.floor(Math.random() * NUM_AGENTS);
 }
 linesVao.create(gl, program_lines);
 
 
 let focus = [world.size[0]*1/3, world.size[1]*1/3];
-let zoom = 3;
+let zoom = 1;
 function refocus() {
 	focus = pick(agents).pos;
 	zoom = (zoom == 1) ? 2 + Math.floor(Math.random() * 8) : 1;
@@ -305,12 +299,20 @@ function refocus() {
 function update() {
 	requestAnimationFrame(update);
 
+
+	
 	if (running) {
+		let linecount = 0;
 		for (let a of agents) {
 			let search_radius = 25;
-			a.near = space.searchUnique(a.pos, search_radius, 4);
+			a.near = space.searchUnique(a, search_radius, 8);
+			for (let n of a.near) {
+				linesVao.indices[linecount++] = a.id;
+				linesVao.indices[linecount++] = Math.floor(Math.random() * NUM_AGENTS); //n.id;
+			}
 			a.update(world);
 		}
+		linesVao.count = Math.min(MAX_NUM_LINES, linecount);
 		let positions = agentsVao.positions;
 		let colors = agentsVao.colors;
 		for (let i=0; i<agents.length; i++) {
@@ -344,8 +346,6 @@ function update() {
 			gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), a, a, a, a);
 			glQuad.bind().draw();
 
-			// new data:
-			
 			let viewmat = [
 				2/gl.canvas.width, 0, 0,
 				0, -2/gl.canvas.height, 0,
@@ -354,6 +354,12 @@ function update() {
 			gl.useProgram(program_agents);
 			gl.uniformMatrix3fv(gl.getUniformLocation(program_agents, "u_matrix"), false, viewmat);
 			agentsVao.bind().submit(agentsVao.positions).draw();
+
+			
+			gl.useProgram(program_lines);
+			linesVao.bind().submit().draw();
+
+			
 		}
 		fbo.end(); 
 	}
@@ -373,15 +379,32 @@ function update() {
 
 	
 	let ctx = canvas.getContext("2d");
-	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+	ctx.fillColor = "black";
+	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 	ctx.save();
 	{
 		ctx.translate(focus[0], focus[1])
 		ctx.scale(zoom, zoom);
 		ctx.translate(-focus[0], -focus[1])
 		
-		//ctx.drawImage(world.grass.canvas, 0, 0);
+		if (showmap) ctx.drawImage(world.ways.canvas, 0, 0);
 		ctx.drawImage(gl.canvas, 0, 0);
+
+		if (showgrid) {
+			ctx.strokeStyle = "hsl(0,0%,100%,15%)"
+			for (let y=0; y<canvas.height; y+=space.cellSize) {
+				ctx.beginPath()
+				ctx.moveTo(0, y)
+				ctx.lineTo(canvas.width, y);
+				ctx.stroke()
+			}
+			for (let x=0; x<canvas.width; x+=space.cellSize) {
+				ctx.beginPath()
+				ctx.moveTo(x, 0)
+				ctx.lineTo(x, canvas.height);
+				ctx.stroke()
+			}
+		}
 		
 	}
 	ctx.restore();
@@ -394,8 +417,10 @@ function update() {
 
 window.addEventListener("resize", resize, false);
 
-canvas.addEventListener("pointermove", function(event) {
-
+canvas.addEventListener("mousedown", function(event) {
+	//console.log(event);
+	let world_coords = [world.size[0] * event.clientX / canvas.clientWidth, world.size[1] * event.clientY / canvas.clientHeight];
+	console.log(world_coords);
 }, false);
 
 
@@ -405,9 +430,17 @@ window.addEventListener("keyup", function(event) {
 		running = !running;
 	} else if (event.key == "z") {
 		refocus();
+	} else if (event.key == "m") {
+		showmap = !showmap;
+	} else if (event.key == "g") {
+		showgrid = !showgrid;
 	} else if (event.key == "s") {
 		// `frame${frame.toString().padStart(5, '0')}.png`;
 		saveCanvasToPNG(canvas, "result");
+	} else if (event.key == 'f') {
+		if (screenfull.enabled) {
+			screenfull.toggle(canvas);
+		}
 	}
 }, false);
 

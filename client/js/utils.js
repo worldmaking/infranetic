@@ -63,6 +63,7 @@ class FPS {
 	}
 };
 
+
 // loads an image and turns it into a typedarray and offscreen canvas
 class ArrayFromImg {
 	constructor(path) {
@@ -87,8 +88,6 @@ class ArrayFromImg {
 				data[i*4+3] = (binary[i*4+3] / 255);
 			}
 			self.data = data;
-
-			console.log(self)
 		}
 		img.src = path; // Set source path
 	}
@@ -119,3 +118,17 @@ class ArrayFromImg {
 			 + this.data[idx+2] * xyz[2];
 	}
 };
+
+document.fullscreenEnabled = document.fullscreenEnabled || document.mozFullScreenEnabled || document.documentElement.webkitRequestFullScreen;
+
+function requestFullscreen(element) {
+	let elem = element || document.documentElement;
+	if (elem.requestFullscreen) {
+		elem.requestFullscreen();
+	} else if (elem.mozRequestFullScreen) {
+		elem.mozRequestFullScreen();
+	} else if (elem.webkitRequestFullScreen) {
+		elem.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+	}
+}
+
