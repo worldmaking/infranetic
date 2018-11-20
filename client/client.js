@@ -209,6 +209,9 @@ let linesVao = {
 	id: gl.createVertexArray(),
 	positionBuffer: agentsVao.positionBuffer,
 
+	//positions: new Float32Array(NUM_AGENTS * 2),
+	//positionBuffer: gl.createBuffer(),
+
 	indices: new Uint16Array(MAX_NUM_LINES),
 	indexBuffer: gl.createBuffer(),
 
@@ -216,6 +219,10 @@ let linesVao = {
 
 
 	submit() {
+		// gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+		// gl.bufferData(gl.ARRAY_BUFFER, this.positions, gl.DYNAMIC_DRAW);
+		// gl.bindBuffer(gl.ARRAY_BUFFER, null); // done.
+
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
 		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.DYNAMIC_DRAW);
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null); // done.
@@ -269,20 +276,24 @@ let linesVao = {
 let program_lines = makeProgramFromCode(gl,
 `#version 300 es
 in vec2 a_position;
+uniform mat3 u_matrix;
 void main() {
-	gl_Position = vec4(a_position.xy, 0, 1);
-	gl_PointSize = 10.f;
+	gl_Position = vec4((u_matrix * vec3(a_position.xy, 1)).xy, 0, 1);
+	//gl_PointSize = 40.f;
 }
 `, 
 `#version 300 es
 precision mediump float;
 out vec4 outColor;
 void main() {
-	outColor = vec4(0, 0.5, 1, 1);
+	outColor = vec4(vec3(0.5), 1) * 0.01;
 }
 `);
 
 
+// for (let i=0; i<linesVao.positions.length; i++) {
+// 	linesVao.positions[i] = Math.random() * world.size[1];
+// }
 for (let i=0; i<linesVao.indices.length; i++) {
 	linesVao.indices[i] = Math.floor(Math.random() * NUM_AGENTS);
 }
@@ -302,19 +313,10 @@ function update() {
 
 	
 	if (running) {
-		let linecount = 0;
-		for (let a of agents) {
-			let search_radius = 25;
-			a.near = space.searchUnique(a, search_radius, 8);
-			for (let n of a.near) {
-				linesVao.indices[linecount++] = a.id;
-				linesVao.indices[linecount++] = Math.floor(Math.random() * NUM_AGENTS); //n.id;
-			}
-			a.update(world);
-		}
-		linesVao.count = Math.min(MAX_NUM_LINES, linecount);
 		let positions = agentsVao.positions;
 		let colors = agentsVao.colors;
+		let linecount = 0;
+
 		for (let i=0; i<agents.length; i++) {
 			let a = agents[i];
 			a.move(world, fps.t);
@@ -328,11 +330,26 @@ function update() {
 			colors[i*4+3] = 1;
 		}
 
+		for (let a of agents) {
+			let search_radius = 25;
+			a.near = space.searchUnique(a, search_radius, 8);
+			for (let n of a.near) {
+				linesVao.indices[linecount++] = a.id;
+				linesVao.indices[linecount++] = n.id;
+			}
+			a.update(world);
+		}
+		linesVao.count = Math.min(MAX_NUM_LINES, linecount);
+		
+
 		fbo.begin();
 		{
 			
 			gl.clearColor(0, 0, 0, 1); // background colour
 			gl.clear(gl.COLOR_BUFFER_BIT);
+			gl.lineWidth(0.1);
+			gl.enable(gl.BLEND);
+			gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
 			// feedback:
 
@@ -357,6 +374,7 @@ function update() {
 
 			
 			gl.useProgram(program_lines);
+			gl.uniformMatrix3fv(gl.getUniformLocation(program_lines, "u_matrix"), false, viewmat);
 			linesVao.bind().submit().draw();
 
 			
