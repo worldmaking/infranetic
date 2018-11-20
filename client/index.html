@@ -12,7 +12,8 @@ body {
   overflow: auto; /*  Disable scrollbars */
   display: block; /* No floating content on sides */
   font-family: monospace; /* use fixed-width fonts by default */
-  /*background: #000;*/
+  background: #000;
+  color: #fff;
 }
 
 canvas {
@@ -36,8 +37,8 @@ canvas {
 <body>
 <canvas id="canvas"></canvas>
 <div id="overlay">
-    fps: <div id="fps"></div>
 </div>
+fps: <span id="fps"></span>
 
 <script src="libs/jquery.min.js"></script>
 <script src="libs/gl-matrix-min.js"></script>

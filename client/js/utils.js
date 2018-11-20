@@ -74,25 +74,48 @@ class ArrayFromImg {
 			self.height = this.height;
 			self.canvas.width = self.width;
 			self.canvas.height = self.height;
-			let length = this.width * this.height;
+			let length = self.width * self.height;
 			let ctx = self.canvas.getContext("2d");
-			ctx.drawImage(this, 0, 0);
-			let imgdata = ctx.getImageData(0, 0, this.width, this.height);
-			let binary = new Uint8ClampedArray(imgdata.data.buffer);
-			let data = new Float32Array(length);
+			ctx.drawImage(img, 0, 0);
+			self.imgdata = ctx.getImageData(0, 0, self.width, self.height);
+			let binary = new Uint8ClampedArray(self.imgdata.data.buffer);
+			let data = new Float32Array(length*4);
 			for (let i=0; i<length; i++) {
-				data[i] = 1. - (binary[i*4+2] / 255);
+				data[i*4+0] = (binary[i*4+0] / 255);
+				data[i*4+1] = (binary[i*4+1] / 255);
+				data[i*4+2] = (binary[i*4+2] / 255);
+				data[i*4+3] = (binary[i*4+3] / 255);
 			}
 			self.data = data;
+
+			console.log(self)
 		}
 		img.src = path; // Set source path
 	}
 
-	
 	read(x, y) {
 		if (!this.data) return 0;
 
-		let idx = Math.floor(x) + Math.floor(y) * this.width;
-		return this.data[idx];
+		let idx = 4*(Math.floor(x) + Math.floor(y) * this.width);
+		return this.data[idx+1];
+	}
+
+	readInto(x, y, v) {
+		if (this.data) {
+			let idx = 4*(Math.floor(x) + Math.floor(y) * this.width);
+			v[0] = this.data[idx];
+			v[1] = this.data[idx+1];
+			v[2] = this.data[idx+2];
+			v[3] = this.data[idx+3];
+		}
+		return v;
+	}
+
+	readDot(x, y, xyz) {
+		if (!this.data) return 0;
+		let idx = 4*(Math.floor(x) + Math.floor(y) * this.width);
+		return this.data[idx] * xyz[0]
+			 + this.data[idx+1] * xyz[1]
+			 + this.data[idx+2] * xyz[2];
 	}
 };

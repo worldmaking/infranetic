@@ -96,7 +96,7 @@ wss.on('connection', function(ws, req) {
 	// }
     // ws.send(array);
     
-    send_all_clients("hi")
+    //send_all_clients("hi")
 });
 
 

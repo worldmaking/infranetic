@@ -7,7 +7,7 @@ const world = {
 	pixels_per_meter: 2160 / 23376, 
 	norm: [1/3231, 1/2160],
 
-	grass: new ArrayFromImg('img/highway.png'),
+	grass: new ArrayFromImg('img/ways.png'),
 };
 world.aspect = world.meters[0]/world.meters[1];
 world.size[0] = world.size[1] * world.aspect;
@@ -15,7 +15,8 @@ world.meters_per_pixel = world.meters[1] / world.size[1];
 world.pixels_per_meter = 1/world.meters_per_pixel;
 world.norm = [1/world.size[0], 1/world.size[1]];
 
-const numagents = 3000;
+const NUM_AGENTS = 3000;
+const MAX_NUM_LINES = NUM_AGENTS*4;
 let agents = [];
 let space = new SpaceHash({
 	width: world.size[0],
@@ -89,30 +90,40 @@ let glQuad = createQuadVao(gl, program_showtex);
 let program_agents = makeProgramFromCode(gl,
 `#version 300 es
 in vec2 a_position;
+in vec4 a_color;
+out vec4 color;
 uniform mat3 u_matrix;
 void main() {
 	gl_Position = vec4((u_matrix * vec3(a_position.xy, 1)).xy, 0, 1);
 	//gl_Position = vec4(a_position.xy/vec2(2000, 2000), 0, 1);
-	gl_PointSize = 1.0;
+	gl_PointSize = 2.0;
+	color = a_color;
 }
 `, 
 `#version 300 es
 precision mediump float;
+in vec4 color;
 out vec4 outColor;
 void main() {
-	outColor = vec4(0, 0.5, 1, 1);
+	outColor = color; //vec4(0, 0.5, 1, 1);
 }
 `);
 
 let agentsVao = {
 	id: gl.createVertexArray(),
-	positions: new Float32Array(numagents * 2),
+	positions: new Float32Array(NUM_AGENTS * 2),
 	positionBuffer: gl.createBuffer(),
 
-	submit(data) {
+	colors: new Float32Array(NUM_AGENTS * 4),
+	colorBuffer: gl.createBuffer(),
+
+	submit() {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, 0, gl.DYNAMIC_DRAW);
-		gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+		gl.bufferData(gl.ARRAY_BUFFER, this.positions, gl.DYNAMIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, null); // done.
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, this.colors, gl.DYNAMIC_DRAW);
 		gl.bindBuffer(gl.ARRAY_BUFFER, null); // done.
 		return this;
 	},
@@ -120,23 +131,49 @@ let agentsVao = {
 	create(gl, program) {
 		this.bind();
 
-		this.submit(this.positions);
+		for (let i=0; i<this.colors.length; i+=4) {
+			this.colors[i+0] = 1;
+			this.colors[i+1] = 0;
+			this.colors[i+2] = 0;
+			this.colors[i+3] = 1;
+		}
 
-		// look up in the shader program where the vertex attributes need to go.
-		let positionAttributeLocation = gl.getAttribLocation(program, "a_position");
-		// Turn on the attribute
-		gl.enableVertexAttribArray(positionAttributeLocation);
-		// Tell the attribute which buffer to use
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-		// Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
-		let size = 2;          // 2 components per iteration
-		let type = gl.FLOAT;   // the data is 32bit floats
-		let normalize = false; // don't normalize the data
-		let stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
-		let offset = 0;        // start at the beginning of the buffer
-		gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset);
-		// done with buffer:
-		gl.bindBuffer(gl.ARRAY_BUFFER, null);
+		this.submit();
+
+		{	
+			let attr = gl.getAttribLocation(program, "a_position");
+			console.log(attr)
+			// Turn on the attribute
+			gl.enableVertexAttribArray(attr);
+			// Tell the attribute which buffer to use
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+			// Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+			let size = 2;          // 2 components per iteration
+			let type = gl.FLOAT;   // the data is 32bit floats
+			let normalize = false; // don't normalize the data
+			let stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
+			let offset = 0;        // start at the beginning of the buffer
+			gl.vertexAttribPointer(attr, size, type, normalize, stride, offset);
+			// done with buffer:
+			gl.bindBuffer(gl.ARRAY_BUFFER, null);
+		}
+		{	
+			let attr = gl.getAttribLocation(program, "a_color");
+			console.log(attr)
+			// Turn on the attribute
+			gl.enableVertexAttribArray(attr);
+			// Tell the attribute which buffer to use
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
+			// Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+			let size = 4;          // 2 components per iteration
+			let type = gl.FLOAT;   // the data is 32bit floats
+			let normalize = false; // don't normalize the data
+			let stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
+			let offset = 0;        // start at the beginning of the buffer
+			gl.vertexAttribPointer(attr, size, type, normalize, stride, offset);
+			// done with buffer:
+			gl.bindBuffer(gl.ARRAY_BUFFER, null);
+		}
 		this.unbind();
 		return this;
 	},
@@ -161,13 +198,108 @@ let agentsVao = {
 		return this;
 	},
 }
+
+
+let linesVao = {
+	id: gl.createVertexArray(),
+	positions: new Float32Array(MAX_NUM_LINES*2),
+	positionBuffer: gl.createBuffer(),
+
+	indices: new Uint16Array(MAX_NUM_LINES),
+	indexBuffer: gl.createBuffer(),
+
+
+	submit(positions, indices) {
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, null); // done.
 	
+	
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null); // done.
+		return this;
+	},
+
+	create(gl, program) {
+		this.bind();
+		this.submit(this.positions, this.indices);
+
+		// look up in the shader program where the vertex attributes need to go.
+		let attr = gl.getAttribLocation(program, "a_position");
+		// Turn on the attribute
+		gl.enableVertexAttribArray(attr);
+		// Tell the attribute which buffer to use
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+		// Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+		let size = 2;          // 2 components per iteration
+		let type = gl.FLOAT;   // the data is 32bit floats
+		let normalize = false; // don't normalize the data
+		let stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
+		let offset = 0;        // start at the beginning of the buffer
+		gl.vertexAttribPointer(attr, size, type, normalize, stride, offset);
+		// done with buffer:
+		gl.bindBuffer(gl.ARRAY_BUFFER, null);
+		this.unbind();
+		return this;
+	},
+	bind() {
+		gl.bindVertexArray(this.id);
+		return this;
+	},
+	
+	unbind() {
+		gl.bindVertexArray(this.id, null);
+		return this;
+	},
+
+	//bind first
+	draw(count = 0) {
+		// draw
+		let primitiveType = gl.LINES;
+		if (count <= 0) count = this.positions.length/2;
+		let offset = 0;
+		//gl.drawArrays(primitiveType, offset, count);
+	
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+		gl.drawElements(gl.LINES, count, gl.UNSIGNED_SHORT, 0);
+		return this;
+	},
+};
+  
+let program_lines = makeProgramFromCode(gl,
+`#version 300 es
+in vec2 a_position;
+void main() {
+	gl_Position = vec4(a_position.xy, 0, 1);
+	gl_PointSize = 10.f;
+}
+`, 
+`#version 300 es
+precision mediump float;
+out vec4 outColor;
+void main() {
+	outColor = vec4(0, 0.5, 1, 1);
+}
+`);
+
+
+for (let i=0; i<linesVao.positions.length; i+=2) {
+	let p = i/linesVao.positions.length;
+	linesVao.positions[i] = Math.cos(p * Math.PI * 2);
+	linesVao.positions[i+1] =  Math.sin(p * Math.PI * 2);
+}
+for (let i=0; i<linesVao.indices.length; i++) {
+	linesVao.indices[i] = i;
+}
+linesVao.create(gl, program_lines);
+
 
 let focus = [world.size[0]*1/3, world.size[1]*1/3];
-let zoom = 5;
+let zoom = 3;
 function refocus() {
 	focus = pick(agents).pos;
-	//zoom = (zoom == 1) ? 2 + Math.floor(Math.random() * 8) : 1;
+	zoom = (zoom == 1) ? 2 + Math.floor(Math.random() * 8) : 1;
 }
 
 function update() {
@@ -180,16 +312,24 @@ function update() {
 			a.update(world);
 		}
 		let positions = agentsVao.positions;
+		let colors = agentsVao.colors;
 		for (let i=0; i<agents.length; i++) {
 			let a = agents[i];
-			a.move(world);
+			a.move(world, fps.t);
 			space.updatePoint(a);
 			positions[i*2] = a.pos[0];
 			positions[i*2+1] = a.pos[1];
+
+			colors[i*4] = a.scent[0];
+			colors[i*4+1] = a.scent[1];
+			colors[i*4+2] = a.scent[2];
+			colors[i*4+3] = 1;
 		}
 
 		fbo.begin();
 		{
+			
+			gl.clearColor(0, 0, 0, 1); // background colour
 			gl.clear(gl.COLOR_BUFFER_BIT);
 
 			// feedback:
@@ -200,7 +340,8 @@ function update() {
 			gl.bindTexture(gl.TEXTURE_2D, fbo.front.id);
 			//gl.bindTexture(gl.TEXTURE_2D, chan1.id);
 			gl.useProgram(program_showtex);
-			gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), 1, 1, 1, 0.999);
+			let a = 0.99;
+			gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), a, a, a, a);
 			glQuad.bind().draw();
 
 			// new data:
@@ -217,8 +358,9 @@ function update() {
 		fbo.end(); 
 	}
 
+	// now draw fbo to glcanvs, for use by ctx
 	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-	//gl.clearColor(1, 1, 1, 1); // background colour
+	gl.clearColor(1, 1, 1, 1); // background colour
   	gl.clear(gl.COLOR_BUFFER_BIT);
 
 	gl.activeTexture(gl.TEXTURE0 + 0);
@@ -230,7 +372,6 @@ function update() {
 	// fbo.bind().readPixels(); // SLOW!!!
 
 	
-
 	let ctx = canvas.getContext("2d");
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 	ctx.save();
@@ -247,7 +388,7 @@ function update() {
 
 	fps.tick();
 	document.getElementById("fps").textContent = Math.floor(fps.fpsavg);
-	if (fps.t % 5 < fps.dt) refocus();
+	//if (fps.t % 5 < fps.dt) refocus();
 }
 
 
@@ -274,7 +415,7 @@ window.addEventListener("keyup", function(event) {
 
 agentsVao.create(gl, program_agents);
 
-for (let i=0; i<numagents; i++) {
+for (let i=0; i<NUM_AGENTS; i++) {
 	agents.push(new Agent(i, world));
 	space.insertPoint(agents[i]);
 }
