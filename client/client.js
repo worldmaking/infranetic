@@ -10,7 +10,7 @@ const world = {
 	// coordinates of the ACC in this space
 	acc: [2382, 1162],
 
-	ways: new ArrayFromImg('img/ways.png'),
+	ways: new ArrayFromImg('img/ways2.png'),
 };
 world.aspect = world.meters[0]/world.meters[1];
 world.size[0] = world.size[1] * world.aspect;
@@ -359,7 +359,7 @@ function update() {
 			gl.bindTexture(gl.TEXTURE_2D, fbo.front.id);
 			//gl.bindTexture(gl.TEXTURE_2D, chan1.id);
 			gl.useProgram(program_showtex);
-			let a = 0.99;
+			let a = 0.995;
 			gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), a, a, a, a);
 			glQuad.bind().draw();
 
@@ -471,15 +471,19 @@ for (let i=0; i<NUM_AGENTS; i++) {
 	space.insertPoint(agents[i]);
 }
 
-let sock = new Socket({
-    reload_on_disconnect: true,
-	onopen: function() {
-		this.send(JSON.stringify({ type: "getdata", date: Date.now() }));
-    },
-	onmessage: function(msg) { 
-        print("received", msg);
-    }
-});
-
+let sock
+try {
+	sock = new Socket({
+		reload_on_disconnect: true,
+		onopen: function() {
+			this.send(JSON.stringify({ type: "getdata", date: Date.now() }));
+		},
+		onmessage: function(msg) { 
+			print("received", msg);
+		}
+	});
+} catch (e) {
+	console.error(e);
+}
 resize();
 update();

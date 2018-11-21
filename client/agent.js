@@ -46,7 +46,7 @@ class Agent {
             return;
         }
 
-        let dev = vec3.random(vec3.create(), 0.01)
+        let dev = vec3.random(vec3.create(), 0.05)
         vec2.add(this.scent, this.scent, dev);
         this.scent[0] = (this.scent[0] > 1) ? 1 : (this.scent[0] < 0) ? 0 : this.scent[0];
         this.scent[1] = (this.scent[1] > 1) ? 1 : (this.scent[1] < 0) ? 0 : this.scent[1];
