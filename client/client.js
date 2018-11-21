@@ -473,15 +473,17 @@ for (let i=0; i<NUM_AGENTS; i++) {
 
 let sock
 try {
-	sock = new Socket({
-		reload_on_disconnect: true,
-		onopen: function() {
-			this.send(JSON.stringify({ type: "getdata", date: Date.now() }));
-		},
-		onmessage: function(msg) { 
-			print("received", msg);
-		}
-	});
+	if (window.location.hostname == "localhost") {
+		sock = new Socket({
+			reload_on_disconnect: true,
+			onopen: function() {
+				this.send(JSON.stringify({ type: "getdata", date: Date.now() }));
+			},
+			onmessage: function(msg) { 
+				print("received", msg);
+			}
+		});
+	}
 } catch (e) {
 	console.error(e);
 }
