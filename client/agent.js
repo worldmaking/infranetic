@@ -4,6 +4,7 @@ class Agent {
 
     constructor(id, world) {
         this.id = id;
+        this.network = neato.createNetwork();
         this.reset();
     }
 
@@ -83,6 +84,8 @@ class Agent {
         }
 
         vec2.set(this.side, this.fwd[1], -this.fwd[0]);
+
+        let outputs = this.network.activate([g1, g2]);
     }
 
     move(world, t) {

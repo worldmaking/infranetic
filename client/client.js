@@ -90,6 +90,23 @@ gl.useProgram(program_showtex);
 gl.uniform1i(gl.getUniformLocation(program_showtex, "u_image"), 0);
 gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), 1, 1, 1, 0.02);
 
+let slab_composite = createSlab(gl, `#version 300 es
+precision mediump float;
+uniform sampler2D u_image;
+uniform vec4 u_color;
+in vec2 v_texCoord;
+out vec4 outColor;
+void main() {
+	outColor = texture(u_image, v_texCoord).rgba * u_color;
+	// invert:
+	//outColor.rgb = 1.-outColor.rgb;
+}
+`);
+slab_composite.use();
+gl.uniform1i(gl.getUniformLocation(slab_composite.program, "u_image"), 0);
+gl.uniform4f(gl.getUniformLocation(slab_composite.program, "u_color"), 1, 1, 1, 0.02);
+
+
 let glQuad = createQuadVao(gl, program_showtex);
 
 let program_agents = makeProgramFromCode(gl,
@@ -100,8 +117,7 @@ out vec4 color;
 uniform mat3 u_matrix;
 void main() {
 	gl_Position = vec4((u_matrix * vec3(a_position.xy, 1)).xy, 0, 1);
-	//gl_Position = vec4(a_position.xy/vec2(2000, 2000), 0, 1);
-	gl_PointSize = 2.0;
+	gl_PointSize = 1.0;
 	color = a_color;
 }
 `, 
@@ -387,12 +403,15 @@ function update() {
 	gl.clearColor(1, 1, 1, 1); // background colour
   	gl.clear(gl.COLOR_BUFFER_BIT);
 
+
+
 	gl.activeTexture(gl.TEXTURE0 + 0);
-    gl.bindTexture(gl.TEXTURE_2D, fbo.front.id);
-	gl.useProgram(program_showtex);
-	gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), 1, 1, 1, 1);
-	glQuad.bind().draw();
+	gl.bindTexture(gl.TEXTURE_2D, fbo.front.id);
 	
+	slab_composite.use();
+	slab_composite.uniform("u_color", 1, 1, 1, 1);
+	slab_composite.draw();
+
 	// fbo.bind().readPixels(); // SLOW!!!
 
 	

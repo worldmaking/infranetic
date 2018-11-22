@@ -35,7 +35,40 @@ function makeProgramFromCode(gl, vertexCode, fragmentCode) {
     let vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexCode);
     let fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentCode);
     // Link the two shaders into a program
-    return createProgram(gl, vertexShader, fragmentShader);
+    let program = createProgram(gl, vertexShader, fragmentShader);
+    return program;
+}
+
+function uniformsFromCode(code) {
+    let uniforms = {};
+    let matches = code.match(/uniform\s+((\w+)\s+(\w+))/g);
+    for (let e of matches) {
+        let terms = e.split(/\s+/)
+        let type = terms[1];
+        let name = terms[2];
+        let location = gl.getUniformLocation(program, name);
+        let setter;
+        switch (type) {
+            case "float": setter = (f) => gl.uniform1f(location, f); break;
+            case "vec2": setter = (x, y, z, w) => gl.uniform2f(location, x, y); break;
+            case "vec3": setter = (x, y, z, w) => gl.uniform3f(location, x, y, z); break;
+            case "vec4": setter = (x, y, z, w) => gl.uniform4f(location, x, y, z, w); break;
+            case "ivec2": setter = (x, y, z, w) => gl.uniform2i(location, x, y); break;
+            case "ivec3": setter = (x, y, z, w) => gl.uniform3i(location, x, y, z); break;
+            case "ivec4": setter = (x, y, z, w) => gl.uniform4i(location, x, y, z, w); break;
+            case "mat2": setter = (m, transpose=false) => gl.uniformMatrix2fv(location, transpose, m); break;
+            case "mat3": setter = (m, transpose=false) => gl.uniformMatrix3fv(location, transpose, m); break;
+            case "mat4": setter = (m, transpose=false) => gl.uniformMatrix4fv(location, transpose, m); break;
+            default: setter = (i) => gl.uniform1i(location, i);
+        }
+        uniforms[name] = { 
+            set: setter,
+            name: name,
+            type: type,
+            location: location,
+        };
+    };
+    return uniforms;
 }
 
 
@@ -231,4 +264,34 @@ function createQuadVao(gl, program) {
     if (program) self.init(program);
 
     return self;
+}
+
+function createSlab(gl, fragCode) {
+    let program = makeProgramFromCode(gl, `#version 300 es
+in vec4 a_position;
+in vec2 a_texCoord;
+out vec2 v_texCoord;
+void main() {
+    gl_Position = a_position;
+    v_texCoord = a_texCoord;
+}`, fragCode);
+    return {
+        program: program,
+        quad: createQuadVao(gl, program),
+        uniforms: uniformsFromCode(fragCode),
+
+        uniform(name, ...args) {
+            this.uniforms[name].set.apply(this, args)
+        },
+
+        use() {
+            gl.useProgram(this.program);
+            return this;
+        },
+
+        draw() {
+            this.quad.bind().draw();
+            return this;
+        },
+    };
 }
