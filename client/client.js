@@ -42,7 +42,7 @@ canvas2.height = world.size[1];
 let glcanvas = document.createElement("canvas");
 let gl = glcanvas.getContext("webgl2", {
 	antialias: true,
-	alpha: true
+	alpha: false
 });
 if (!gl) {
 	alert("Browser error: unable to acquire webgl2 context");
@@ -51,23 +51,23 @@ const ext = gl.getExtension("EXT_color_buffer_float");
 if (!ext) {
 	alert("Browser error: need EXT_color_buffer_float");
 }
-gl.canvas.width = canvas.width;
-gl.canvas.height = canvas.height;
-
+gl.canvas.width = world.size[0];
+gl.canvas.height = world.size[1];
 
 function resize() {
-	let window_aspect = window.innerWidth/window.innerHeight;
+	let w = window.innerWidth/2, h = window.innerHeight;
+	console.log(w, h);
+	let window_aspect = w/h;
 	let canvas_aspect = world.aspect/window_aspect;
-	let percent = 50;
-	if (canvas_aspect > 1) {
-		canvas.style.width = percent+'%';
-		canvas.style.height = Math.floor(percent / canvas_aspect) + "%";
-	} else {
-		canvas.style.width = Math.floor(percent * canvas_aspect) + "%";
-		canvas.style.height = percent+'%';
-	}
-	canvas2.style.width = canvas.style.width
-	canvas2.style.height = canvas.style.height
+	canvas.width = w;
+	canvas.height = h;
+	canvas.style.width = canvas.width + "px";
+	canvas.style.height = canvas.height + "px";
+
+	canvas2.width = canvas.width;
+	canvas2.height = canvas.height;
+	canvas2.style.width = canvas2.width + "px";
+	canvas2.style.height = canvas2.height + "px";
 }
 
 let fbo = createFBO(gl, gl.canvas.width, gl.canvas.height, true);
@@ -91,7 +91,7 @@ out vec4 outColor;
 void main() {
 	outColor = texture(u_image, v_texCoord).rgba * u_color;
 }
-`);
+`)
 gl.useProgram(program_showtex);
 gl.uniform1i(gl.getUniformLocation(program_showtex, "u_image"), 0);
 gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), 1, 1, 1, 0.02);
@@ -107,10 +107,11 @@ void main() {
 	// invert:
 	//outColor.rgb = 1.-outColor.rgb;
 }
-`);
-slab_composite.use();
-gl.uniform1i(gl.getUniformLocation(slab_composite.program, "u_image"), 0);
-gl.uniform4f(gl.getUniformLocation(slab_composite.program, "u_color"), 1, 1, 1, 0.02);
+`,{
+	"u_image": [0],
+	"u_color": [1, 1, 1, 1]
+})
+
 
 
 let glQuad = createQuadVao(gl, program_showtex);
@@ -413,51 +414,90 @@ function update() {
 
 	gl.activeTexture(gl.TEXTURE0 + 0);
 	gl.bindTexture(gl.TEXTURE_2D, fbo.front.id);
-	
-	slab_composite.use();
-	slab_composite.uniform("u_color", 1, 1, 1, 1);
-	slab_composite.draw();
+	slab_composite.use().draw();
 
 	// fbo.bind().readPixels(); // SLOW!!!
 
-	
 	let ctx = canvas.getContext("2d");
 	ctx.fillColor = "black";
 	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-	ctx.save();
-	{
-		ctx.translate(focus[0], focus[1])
-		ctx.scale(zoom, zoom);
-		ctx.translate(-focus[0], -focus[1])
-		
-		if (showmap) ctx.drawImage(world.ways.canvas, 0, 0);
-		ctx.drawImage(gl.canvas, 0, 0);
 
-		if (showgrid) {
-			ctx.strokeStyle = "hsl(0,0%,100%,15%)"
-			for (let y=0; y<canvas.height; y+=space.cellSize) {
-				ctx.beginPath()
-				ctx.moveTo(0, y)
-				ctx.lineTo(canvas.width, y);
-				ctx.stroke()
-			}
-			for (let x=0; x<canvas.width; x+=space.cellSize) {
-				ctx.beginPath()
-				ctx.moveTo(x, 0)
-				ctx.lineTo(x, canvas.height);
-				ctx.stroke()
-			}
+	let zoom = 32;
+	let w = gl.canvas.width/zoom;
+	let xcount = canvas.width / w;
+	let ycount = canvas.height / w;
+	let glw = w/2;
+	let i=0;
+	for (let y=0; y<ycount; y++) {
+		for (let x=0; x<xcount; x++, i++) {
+			let a = agents[i];
+			ctx.drawImage(gl.canvas, 
+				a.pos[0]-glw/2, a.pos[1]-glw/2, glw, glw,
+				w*x+w/4, w*y+w/4, w/2, w/2);
 		}
-		
 	}
-	ctx.restore();
+	
+	// ctx.save();
+	// {
+	// 	ctx.translate(focus[0], focus[1])
+	// 	ctx.scale(zoom, zoom);
+	// 	ctx.translate(-focus[0], -focus[1])
+		
+	// 	ctx.drawImage(gl.canvas, 0, 0);
 
-	let ctx2 = canvas2.getContext("2d");
-	ctx2.drawImage(gl.canvas, 0, 0);
+	// 	if (showgrid) {
+	// 		ctx.strokeStyle = "hsl(0,0%,100%,15%)"
+	// 		for (let y=0; y<canvas.height; y+=space.cellSize) {
+	// 			ctx.beginPath()
+	// 			ctx.moveTo(0, y)
+	// 			ctx.lineTo(canvas.width, y);
+	// 			ctx.stroke()
+	// 		}
+	// 		for (let x=0; x<canvas.width; x+=space.cellSize) {
+	// 			ctx.beginPath()
+	// 			ctx.moveTo(x, 0)
+	// 			ctx.lineTo(x, canvas.height);
+	// 			ctx.stroke()
+	// 		}
+	// 	}
+		
+	// }
+	// ctx.restore();
+
+
+	
+	if (1) {
+		let ctx = canvas2.getContext("2d");
+		let rr = (glcanvas.width/glcanvas.height) / (canvas.width/canvas.height);
+		if (rr > 1) {
+			let h = Math.floor(canvas.height / rr);
+			ctx.drawImage(gl.canvas, 
+				0, 0, glcanvas.width, glcanvas.height,
+				0, (canvas.height-h)/2, canvas.width, h);
+		} else {
+			let w = Math.floor(canvas.width * rr);
+			ctx.drawImage(gl.canvas, 
+				0, 0, glcanvas.width, glcanvas.height,
+				Math.floor((canvas.width-w)/2), 0, w, canvas.height);
+		}
+	}
+
+	if (0) {
+		canvastex2.bind().submit();
+		
+		//gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		//gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		slab_composite2.use().draw();
+	}
+
 
 	fps.tick();
 	document.getElementById("fps").textContent = Math.floor(fps.fpsavg);
-	//if (fps.t % 5 < fps.dt) refocus();
+	//
+	if (fps.t % 5 < fps.dt) {
+		console.log("fps: ", Math.floor(fps.fpsavg))
+		//refocus();
+	}
 }
 
 
@@ -486,6 +526,7 @@ window.addEventListener("keyup", function(event) {
 	} else if (event.key == 'f') {
 		if (screenfull.enabled) {
 			screenfull.toggle(document.body);
+			resize();
 		}
 	}
 }, false);
@@ -517,3 +558,5 @@ try {
 }
 resize();
 update();
+
+console.log(canvastex2)

@@ -3,31 +3,55 @@
 <head>
 <meta charset="utf-8">
 <style>
+* {
+  margin: 0px;
+  border: 0;
+}
+
 html,
 body {
   width: 100%;
   height: 100%;
-  margin: 0px;
-  border: 0;
   overflow: auto; /*  Disable scrollbars */
   display: block; /* No floating content on sides */
   font-family: monospace; /* use fixed-width fonts by default */
+  -webkit-font-smoothing: antialiased;
+  font-smoothing: antialiased;
+
   background: #000;
   color: #fff;
 }
 
-/* hide mouse */
+body {
+    display: table;
+}
+
+.row {
+    display: table-row;
+    height: 100%;
+    vertical-align: middle;
+    text-align: center;
+}
+
+.cell {
+    display: table-cell;
+    height: 100%;
+    width: 50%;
+    vertical-align: middle;
+    text-align: center;
+}
+
+/* hide mouse 
 * {
     cursor: none;
-}
+}*/
 
 canvas {
 	/*position: absolute;
     left: 0px;
     top: 0px;*/
-	width: 100%;
-	height: 100%;
-    
+	width: 10%;
+	height: 10%;
 }
 
 #overlay {
@@ -43,7 +67,10 @@ canvas {
 
 </style>
 <body>
-<canvas id="canvas"></canvas><canvas id="canvas2"></canvas>
+    <div class="row">
+        <div class="cell"><canvas id="canvas2"></canvas></div>
+        <div class="cell"><canvas id="canvas"></canvas></div>
+    </div>
 <div id="overlay">
 </div>
 fps: <span id="fps"></span>

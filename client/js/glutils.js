@@ -38,7 +38,7 @@ function makeProgramFromCode(gl, vertexCode, fragmentCode) {
     return createProgram(gl, vertexShader, fragmentShader);
 }
 
-function uniformsFromCode(program, code) {
+function uniformsFromCode(gl, program, code) {
     let uniforms = {};
     let matches = code.match(/uniform\s+((\w+)\s+(\w+))/g);
     for (let e of matches) {
@@ -115,13 +115,16 @@ function createPixelTexture(gl, width, height, floatingpoint=false) {
             let internalFormat = floatingpoint ? gl.RGBA32F : gl.RGBA;   // format we want in the texture
             let border = 0;                 // must be 0
             gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat, this.width, this.height, border, this.format, this.dataType, this.data);
+            //gl.generateMipmap(gl.TEXTURE_2D);
         },
         
-        bind() {
+        bind(unit = 0) {
+            gl.activeTexture(gl.TEXTURE0 + unit);
             gl.bindTexture(gl.TEXTURE_2D, this.id);
             return this;
         },
-        unbind() {
+        unbind(unit = 0) {
+            gl.activeTexture(gl.TEXTURE0 + unit);
             gl.bindTexture(gl.TEXTURE_2D, null);
             return this;
         },
@@ -134,6 +137,7 @@ function createPixelTexture(gl, width, height, floatingpoint=false) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    
 
     return tex.unbind();
 }
@@ -265,7 +269,7 @@ function createQuadVao(gl, program) {
     return self;
 }
 
-function createSlab(gl, fragCode) {
+function createSlab(gl, fragCode, uniforms) {
     let program = makeProgramFromCode(gl, `#version 300 es
 in vec4 a_position;
 in vec2 a_texCoord;
@@ -274,13 +278,23 @@ void main() {
     gl_Position = a_position;
     v_texCoord = a_texCoord;
 }`, fragCode);
-    return {
+    let self = {
         program: program,
         quad: createQuadVao(gl, program),
-        uniforms: uniformsFromCode(program, fragCode),
+        uniforms: uniformsFromCode(gl, program, fragCode),
 
         uniform(name, ...args) {
-            this.uniforms[name].set.apply(this, args)
+            this.uniforms[name].set.apply(this, args);
+            return this;
+        },
+
+        setuniforms(dict) {
+            this.use();
+            for (let k in dict) {
+                console.log(k, dict[k])
+                this.uniforms[k].set.apply(this, dict[k]);
+            }
+            return this;
         },
 
         use() {
@@ -293,4 +307,6 @@ void main() {
             return this;
         },
     };
+    if (uniforms) self.setuniforms(uniforms);
+    return self;
 }
