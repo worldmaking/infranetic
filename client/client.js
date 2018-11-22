@@ -36,6 +36,9 @@ let showgrid = false;
 let canvas = document.getElementById("canvas");
 canvas.width = world.size[0];
 canvas.height = world.size[1]; 
+let canvas2 = document.getElementById("canvas2");
+canvas2.width = world.size[0];
+canvas2.height = world.size[1]; 
 let glcanvas = document.createElement("canvas");
 let gl = glcanvas.getContext("webgl2", {
 	antialias: true,
@@ -55,12 +58,15 @@ gl.canvas.height = canvas.height;
 function resize() {
 	let window_aspect = window.innerWidth/window.innerHeight;
 	let canvas_aspect = world.aspect/window_aspect;
+	let percent = 50;
 	if (canvas_aspect > 1) {
-		canvas.style.width = '100%';
-		canvas.style.height = Math.floor(100 / canvas_aspect) + "%";
+		canvas.style.width = percent+'%';
+		canvas.style.height = Math.floor(percent / canvas_aspect) + "%";
+		canvas2.style.width = percent+'%';
+		canvas2.style.height = Math.floor(percent / canvas_aspect) + "%";
 	} else {
-		canvas.style.width = Math.floor(100 * canvas_aspect) + "%";
-		canvas.style.height = '100%';
+		canvas2.style.width = Math.floor(percent * canvas_aspect) + "%";
+		canvas2.style.height = percent+'%';
 	}
 }
 
@@ -446,6 +452,9 @@ function update() {
 	}
 	ctx.restore();
 
+	let ctx2 = canvas2.getContext("2d");
+	ctx2.drawImage(gl.canvas, 0, 0);
+
 	fps.tick();
 	document.getElementById("fps").textContent = Math.floor(fps.fpsavg);
 	//if (fps.t % 5 < fps.dt) refocus();
@@ -476,7 +485,7 @@ window.addEventListener("keyup", function(event) {
 		saveCanvasToPNG(canvas, "result");
 	} else if (event.key == 'f') {
 		if (screenfull.enabled) {
-			screenfull.toggle(canvas);
+			screenfull.toggle(document.body);
 		}
 	}
 }, false);
