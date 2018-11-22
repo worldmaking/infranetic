@@ -62,12 +62,12 @@ function resize() {
 	if (canvas_aspect > 1) {
 		canvas.style.width = percent+'%';
 		canvas.style.height = Math.floor(percent / canvas_aspect) + "%";
-		canvas2.style.width = percent+'%';
-		canvas2.style.height = Math.floor(percent / canvas_aspect) + "%";
 	} else {
-		canvas2.style.width = Math.floor(percent * canvas_aspect) + "%";
-		canvas2.style.height = percent+'%';
+		canvas.style.width = Math.floor(percent * canvas_aspect) + "%";
+		canvas.style.height = percent+'%';
 	}
+	canvas2.style.width = canvas.style.width
+	canvas2.style.height = canvas.style.height
 }
 
 let fbo = createFBO(gl, gl.canvas.width, gl.canvas.height, true);
