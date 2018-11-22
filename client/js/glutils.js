@@ -35,11 +35,10 @@ function makeProgramFromCode(gl, vertexCode, fragmentCode) {
     let vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexCode);
     let fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentCode);
     // Link the two shaders into a program
-    let program = createProgram(gl, vertexShader, fragmentShader);
-    return program;
+    return createProgram(gl, vertexShader, fragmentShader);
 }
 
-function uniformsFromCode(code) {
+function uniformsFromCode(program, code) {
     let uniforms = {};
     let matches = code.match(/uniform\s+((\w+)\s+(\w+))/g);
     for (let e of matches) {
@@ -278,7 +277,7 @@ void main() {
     return {
         program: program,
         quad: createQuadVao(gl, program),
-        uniforms: uniformsFromCode(fragCode),
+        uniforms: uniformsFromCode(program, fragCode),
 
         uniform(name, ...args) {
             this.uniforms[name].set.apply(this, args)
