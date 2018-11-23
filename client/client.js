@@ -356,7 +356,19 @@ function refocus() {
 function update() {
 	requestAnimationFrame(update);
 
+	let t = fps.t / audioLoopSeconds;
 
+	// decay audio:
+	let audioDecay = 0.9;
+	let audioChannel0 = audioBuffer.getChannelData(0);
+	let audioChannel1 = audioBuffer.getChannelData(1);
+	for (let channel = 0; channel < audioChannels; channel++) {
+        // This gives us the actual array that contains the data
+        let bufferChannel = audioBuffer.getChannelData(channel);
+        for (let i = 0; i < audioFrames; i++) {
+            bufferChannel[i] *= audioDecay;
+        }
+    }
 	
 	if (running) {
 		let positions = agentsVao.positions;
@@ -365,7 +377,7 @@ function update() {
 
 		for (let i=0; i<agents.length; i++) {
 			let a = agents[i];
-			a.move(world, fps.t);
+			a.move(world, t);
 			space.updatePoint(a);
 			positions[i*2] = a.pos[0];
 			positions[i*2+1] = a.pos[1];
@@ -374,6 +386,57 @@ function update() {
 			colors[i*4+1] = a.scent[1];
 			colors[i*4+2] = a.scent[2];
 			colors[i*4+3] = a.active;
+
+			if (i < 0) {
+
+				let idx = Math.floor(a.phase * audioFrames);
+				let pan = a.pos[0] / world.size[0];
+				let pan1 = 1-pan;
+
+				let len = 160;
+				let f = 1 + (Math.pow(a.scent[0], 4) * 10);
+				let z = 0;
+				let dz = 1/len;
+				let e = 0.1;
+				let env = 0;
+				let de = Math.pow(0.001, 1/len)
+
+
+				for (let s=0; s<len; s++) {
+					let sidx = (idx + s) % audioFrames;
+					z += dz;
+					e *= de;
+					env += 0.1 * (e-env);
+					//let w = 0.02 * Math.sin(Math.PI * z * f) * Math.sin(Math.PI * z);
+					let w = Math.sin(Math.PI * z * f) * env;
+					audioChannel0[sidx] += w * pan1;
+					audioChannel1[sidx] += w * pan;
+				}
+			} else {
+				let idx = Math.floor(a.phase * audioFrames);
+				let pan = a.pos[0] / world.size[0];
+				let pan1 = 1-pan;
+
+				let len = 64;
+				let f = (Math.pow(a.scent[0], 2) * 8);
+				let z = 0;
+				let dz = f/len;
+				let e = 0.01;
+				let env = 0;
+				let de = Math.pow(0.001, 1/len)
+
+
+				for (let s=0; s<len; s++) {
+					let sidx = (idx + s) % audioFrames;
+					z += dz;
+					e *= de;
+					env += 0.3 * (e-env);
+					//let w = 0.02 * Math.sin(Math.PI * z * f) * Math.sin(Math.PI * z);
+					let w = Math.sin(Math.PI * z) * env;
+					audioChannel0[sidx] += w * pan1;
+					audioChannel1[sidx] += w * pan;
+				}
+			}
 		}
 
 		for (let a of agents) {
@@ -582,3 +645,4 @@ try {
 }
 resize();
 update();
+startAudio();

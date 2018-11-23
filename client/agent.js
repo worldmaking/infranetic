@@ -126,7 +126,7 @@ class Agent {
         this.phase = p1;
 
         // get pulse activation:
-        let p = (this.phase + t*0.5);
+        let p = (this.phase + t);
         this.active = 1-(p - ~~p);
 
         let speed = Math.pow(this.active, 3) * 3;
