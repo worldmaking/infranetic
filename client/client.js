@@ -42,7 +42,7 @@ canvas2.height = world.size[1];
 let glcanvas = document.createElement("canvas");
 let gl = glcanvas.getContext("webgl2", {
 	antialias: true,
-	alpha: false
+	alpha: true
 });
 if (!gl) {
 	alert("Browser error: unable to acquire webgl2 context");
@@ -55,7 +55,7 @@ gl.canvas.width = world.size[0];
 gl.canvas.height = world.size[1];
 
 function resize() {
-	let w = window.innerWidth/2, h = window.innerHeight;
+	let w = window.innerWidth, h = window.innerHeight;
 	console.log(w, h);
 	let window_aspect = w/h;
 	let canvas_aspect = world.aspect/window_aspect;
@@ -558,5 +558,3 @@ try {
 }
 resize();
 update();
-
-console.log(canvastex2)
