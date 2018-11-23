@@ -68,8 +68,8 @@ class Agent {
         vec2.set(this.fwd, Math.cos(this.dir), Math.sin(this.dir))
 
         let entrainment = 0.1;
-        let deviation = 0.00001;
-        let bias = -0.0001;
+        let deviation = 0.0000;
+        let bias = -0.001;
         
         if (this.near.length > 1) {
             let pdavg = 0;

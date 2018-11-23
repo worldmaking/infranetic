@@ -11,6 +11,8 @@ const world = {
 	acc: [2382, 1162],
 
 	ways: new ArrayFromImg('img/ways2.png'),
+	areas: new ArrayFromImg('img/areas.png'),
+	data: new ArrayFromImg('img/data.png'),
 };
 world.aspect = world.meters[0]/world.meters[1];
 world.size[0] = world.size[1] * world.aspect;
