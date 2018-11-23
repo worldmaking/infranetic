@@ -20,6 +20,7 @@ class Agent {
 
         this.scent = vec3.fromValues( 0.5, 0.5, 0.5 );
         this.phase = Math.random();
+        this.dphase = 0;
         this.active = 0;
 
         this.size = 1;
@@ -54,9 +55,6 @@ class Agent {
         this.scent[0] = (this.scent[0] > 1) ? 1 : (this.scent[0] < 0) ? 0 : this.scent[0];
         this.scent[1] = (this.scent[1] > 1) ? 1 : (this.scent[1] < 0) ? 0 : this.scent[1];
         this.scent[2] = (this.scent[2] > 1) ? 1 : (this.scent[2] < 0) ? 0 : this.scent[2];
-        for (let n of this.near) {
-            vec3.lerp(this.scent, this.scent, n.scent, 0.1);
-        }
         
         this.size = (g2 > 0 || g1 > 0) ? 3 : 1;
         this.dir = Math.atan2(this.fwd[1], this.fwd[0]);
@@ -70,17 +68,27 @@ class Agent {
         vec2.set(this.fwd, Math.cos(this.dir), Math.sin(this.dir))
 
         let entrainment = 0.1;
-        let deviation = 0.0;
-        let bias = 0.005;
+        let deviation = 0.00001;
+        let bias = -0.0001;
         
         if (this.near.length > 1) {
             let pdavg = 0;
             for (let n of this.near) {
                 if (n == this) continue;
 
+                
+
+                // get activation difference:
+                let ad = n.active - this.active;
+
+                // only listen to louder voices:
+                if (ad > 0) {
+                    vec3.lerp(this.scent, this.scent, n.scent, 0.1);
+                }
+
                 // get phase difference:
                 let pd = (n.phase - this.phase);
-                pdavg += (pd - Math.floor(pd + 0.5)); // wrapped into -0.5..0.5
+                pdavg += (pd - Math.floor(pd + 0.5)) + bias; // wrapped into -0.5..0.5
 
                 if (0) {
                     // just a dumb exmaple proof of concept:
@@ -97,21 +105,9 @@ class Agent {
             }
             pdavg /= this.near.length;
 
-            let p1 = this.phase + entrainment*pdavg + deviation*(Math.random()-0.5) + bias;
-            if (p1 >= 1) {
-                p1 -= 1;
-            } else if (p1 < 0) {
-                p1 += 1;
-            }
-            this.phase = p1;
+            this.dphase = entrainment*pdavg;
         } else {
-            let p1 = this.phase + 0.000*Math.random();
-            if (p1 >= 1) {
-                p1 -= 1;
-            } else if (p1 < 0) {
-                p1 += 1;
-            }
-            this.phase = p1;
+            this.dphase = deviation*Math.random();
         }
 
         vec2.set(this.side, this.fwd[1], -this.fwd[0]);
@@ -120,21 +116,22 @@ class Agent {
     }
 
     move(world, t) {
-        let r = 1000 - vec2.distance(this.pos, world.acc) * 0.002;
+        // update phase:
+        let p1 = this.phase + this.dphase;
+        if (p1 >= 1) {
+            p1 -= 1;
+        } else if (p1 < 0) {
+            p1 += 1;
+        }
+        this.phase = p1;
 
-        let phase = (this.phase + t*0.25);
+        // get pulse activation:
+        let p = (this.phase + t*0.5);
+        this.active = 1-(p - ~~p);
 
-        // cosine curve
-        //let p = 1 + Math.cos(Math.PI * phase);
-        // pulse
-        let p = 1-(phase - ~~phase);
-        this.active = p;
-
-        let speed = Math.pow(p, 3) * 3;
-
+        let speed = Math.pow(this.active, 3) * 3;
         this.pos[0] += (this.speed * speed) * this.fwd[0];
         this.pos[1] += (this.speed * speed) * this.fwd[1];
-
         this.dir = Math.atan2(this.fwd[1], this.fwd[0]);
 
         this.wrap(world);

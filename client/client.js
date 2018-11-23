@@ -116,31 +116,6 @@ void main() {
 
 let glQuad = createQuadVao(gl, program_showtex);
 
-let program_agents = makeProgramFromCode(gl,
-`#version 300 es
-in vec2 a_position;
-in vec4 a_color;
-out vec4 color;
-uniform mat3 u_matrix;
-uniform float u_pointsize;
-void main() {
-	gl_Position = vec4((u_matrix * vec3(a_position.xy, 1)).xy, 0, 1);
-	gl_PointSize = u_pointsize * a_color.a;
-	color = a_color;
-}
-`, 
-`#version 300 es
-precision mediump float;
-in vec4 color;
-out vec4 outColor;
-void main() {
-	outColor = color; //vec4(0, 0.5, 1, 1);
-	outColor.rgb *= outColor.a;
-	vec3 c = color.rgb;
-	float a = 0.1 + color.a*0.9;
-	outColor = vec4(c * a, 1);
-}
-`);
 
 let agentsVao = {
 	id: gl.createVertexArray(),
@@ -232,25 +207,43 @@ let agentsVao = {
 	},
 }
 
+let program_agents = makeProgramFromCode(gl,
+`#version 300 es
+in vec2 a_position;
+in vec4 a_color;
+out vec4 color;
+uniform mat3 u_matrix;
+uniform float u_pointsize;
+void main() {
+	gl_Position = vec4((u_matrix * vec3(a_position.xy, 1)).xy, 0, 1);
+	gl_PointSize = u_pointsize * a_color.a;
+	color = a_color;
+}
+`, 
+`#version 300 es
+precision mediump float;
+in vec4 color;
+out vec4 outColor;
+void main() {
+	outColor = color; //vec4(0, 0.5, 1, 1);
+	outColor.rgb *= outColor.a;
+	vec3 c = color.rgb;
+	float a = 0.1 + color.a*0.9;
+	outColor = vec4(c * a, 1);
+}
+`);
 
 let linesVao = {
 	id: gl.createVertexArray(),
 	positionBuffer: agentsVao.positionBuffer,
-
-	//positions: new Float32Array(NUM_AGENTS * 2),
-	//positionBuffer: gl.createBuffer(),
+	colorBuffer: agentsVao.colorBuffer,
 
 	indices: new Uint16Array(MAX_NUM_LINES),
 	indexBuffer: gl.createBuffer(),
-
 	count: 0,
 
 
 	submit() {
-		// gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-		// gl.bufferData(gl.ARRAY_BUFFER, this.positions, gl.DYNAMIC_DRAW);
-		// gl.bindBuffer(gl.ARRAY_BUFFER, null); // done.
-
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
 		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.DYNAMIC_DRAW);
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null); // done.
@@ -260,22 +253,40 @@ let linesVao = {
 	create(gl, program) {
 		this.bind();
 		this.submit();
-
-		// look up in the shader program where the vertex attributes need to go.
-		let attr = gl.getAttribLocation(program, "a_position");
-		// Turn on the attribute
-		gl.enableVertexAttribArray(attr);
-		// Tell the attribute which buffer to use
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-		// Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
-		let size = 2;          // 2 components per iteration
-		let type = gl.FLOAT;   // the data is 32bit floats
-		let normalize = false; // don't normalize the data
-		let stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
-		let offset = 0;        // start at the beginning of the buffer
-		gl.vertexAttribPointer(attr, size, type, normalize, stride, offset);
-		// done with buffer:
-		gl.bindBuffer(gl.ARRAY_BUFFER, null);
+		{
+			// look up in the shader program where the vertex attributes need to go.
+			let attr = gl.getAttribLocation(program, "a_position");
+			// Turn on the attribute
+			gl.enableVertexAttribArray(attr);
+			// Tell the attribute which buffer to use
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+			// Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+			let size = 2;          // 2 components per iteration
+			let type = gl.FLOAT;   // the data is 32bit floats
+			let normalize = false; // don't normalize the data
+			let stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
+			let offset = 0;        // start at the beginning of the buffer
+			gl.vertexAttribPointer(attr, size, type, normalize, stride, offset);
+			// done with buffer:
+			gl.bindBuffer(gl.ARRAY_BUFFER, null);
+		}
+		{	
+			let attr = gl.getAttribLocation(program, "a_color");
+			console.log(attr)
+			// Turn on the attribute
+			gl.enableVertexAttribArray(attr);
+			// Tell the attribute which buffer to use
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
+			// Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+			let size = 4;          // 2 components per iteration
+			let type = gl.FLOAT;   // the data is 32bit floats
+			let normalize = false; // don't normalize the data
+			let stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
+			let offset = 0;        // start at the beginning of the buffer
+			gl.vertexAttribPointer(attr, size, type, normalize, stride, offset);
+			// done with buffer:
+			gl.bindBuffer(gl.ARRAY_BUFFER, null);
+		}
 		this.unbind();
 		return this;
 	},
@@ -304,17 +315,22 @@ let linesVao = {
 let program_lines = makeProgramFromCode(gl,
 `#version 300 es
 in vec2 a_position;
+in vec4 a_color;
 uniform mat3 u_matrix;
+out vec4 color;
 void main() {
 	gl_Position = vec4((u_matrix * vec3(a_position.xy, 1)).xy, 0, 1);
-	//gl_PointSize = 40.f;
+	color = a_color;
 }
 `, 
 `#version 300 es
 precision mediump float;
+in vec4 color;
 out vec4 outColor;
 void main() {
-	outColor = vec4(vec3(0.5), 1) * 0.01;
+	vec3 c = mix(color.rgb, vec3(0.5), 0.8);
+	outColor = vec4(c, color.a);
+	//outColor = vec4(vec3(0.5), 1) * 0.01;
 }
 `);
 
@@ -377,8 +393,8 @@ function update() {
 			gl.clear(gl.COLOR_BUFFER_BIT);
 			gl.lineWidth(0.1);
 			gl.enable(gl.BLEND);
-			gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-
+			//gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 			// feedback:
 
 			//gl.activeTexture(gl.TEXTURE0 + 1);
@@ -388,7 +404,7 @@ function update() {
 			//gl.bindTexture(gl.TEXTURE_2D, chan1.id);
 			gl.useProgram(program_showtex);
 			let a = 0.9; //0.995;
-			gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), a, a, a, a);
+			gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), a, a, a, 1);
 			glQuad.bind().draw();
 
 			let viewmat = [
@@ -413,7 +429,7 @@ function update() {
 
 	// now draw fbo to glcanvs, for use by ctx
 	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-	gl.clearColor(1, 1, 1, 1); // background colour
+	gl.clearColor(0, 0, 0, 1); // background colour
   	gl.clear(gl.COLOR_BUFFER_BIT);
 
 
