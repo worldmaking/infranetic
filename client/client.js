@@ -230,7 +230,7 @@ void main() {
 	outColor = color; //vec4(0, 0.5, 1, 1);
 	outColor.rgb *= outColor.a;
 	vec3 c = color.rgb;
-	float a = 0.1 + color.a*0.9;
+	float a = 0.1 + color.a*color.a*0.9;
 	outColor = vec4(c * a, 1);
 }
 `);

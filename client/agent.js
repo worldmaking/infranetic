@@ -10,8 +10,8 @@ class Agent {
 
     reset() {
         this.pos = vec2.fromValues(
-            Math.random() * world.size[0],
-            Math.random() * world.size[1]
+            (Math.random() * world.size[0]),
+            (Math.random() * world.size[1]),
         );
         this.fwd = vec2.create();
         vec2.random(this.fwd, 1);
@@ -21,7 +21,8 @@ class Agent {
         this.scent = vec3.fromValues( 0.5, 0.5, 0.5 );
         this.phase = Math.random();
         this.dphase = 0;
-        this.active = 0;
+        this.rate = 1;
+        this.active = Math.random();
 
         this.size = 1;
         this.speed = 2 * world.pixels_per_meter; // pixels per frame
@@ -67,12 +68,29 @@ class Agent {
 
         vec2.set(this.fwd, Math.cos(this.dir), Math.sin(this.dir))
 
-        let entrainment = 0.1;
+        let entrainment = 0.5;
         let deviation = 0.0000;
-        let bias = -0.001;
+        let bias = 0.001;
+
+        /*
+            concept: want to align phase with neighbours
+
+                on every frame, decrement activation by a small amount (constant for all, or per agent, or 'adapted'?)
+                when activation reaches zero, fire back up to 1
+
+                when active > 0.5, don't listen to neighbours
+
+                when active < 0.5, compare with neighbors
+                   ignore neighbours whose activation phases are far from ours
+                    but if similar, adjust ours toward the average
+
+        */
         
+        let dp = 0;
         if (this.near.length > 1) {
             let pdavg = 0;
+            let adavg = 0;
+            let aavg = 0;
             for (let n of this.near) {
                 if (n == this) continue;
 
@@ -80,15 +98,44 @@ class Agent {
 
                 // get activation difference:
                 let ad = n.active - this.active;
+                let sad = (ad - Math.floor(ad + 0.5)); // wrapped into +/- 0.5;
+                let aad = Math.abs(sad);
 
+                
+
+                // listening threshold:
+                if (n.active > 0.5) {
+                    
+                    aavg += sad;
+                    // similarity threshold:
+                    if (sad < 0.5) {
+                        dp += sad;
+                    }
+                }
+
+
+
+
+
+
+
+
+
+
+
+
+                adavg += ad;
                 // only listen to louder voices:
                 if (ad > 0) {
                     vec3.lerp(this.scent, this.scent, n.scent, 0.1);
+                    
                 }
 
+
+                
                 // get phase difference:
                 let pd = (n.phase - this.phase);
-                pdavg += (pd - Math.floor(pd + 0.5)) + bias; // wrapped into -0.5..0.5
+                pdavg += (pd - Math.floor(pd + 0.5));// + bias; // wrapped into -0.5..0.5
 
                 if (0) {
                     // just a dumb exmaple proof of concept:
@@ -104,8 +151,17 @@ class Agent {
                 }
             }
             pdavg /= this.near.length;
+            adavg /= this.near.length;
 
-            this.dphase = entrainment*pdavg;
+            //this.dphase = entrainment*pdavg;
+            //this.dphase = entrainment*adavg;
+            //this.dphase = entrainment * shift;
+
+            aavg /= this.near.length;
+            this.dphase = -entrainment * (aavg);
+            this.rate += 0.1 * this.dphase;
+
+           // this.dphase = dp * entrainment / this.near.length;
         } else {
             this.dphase = deviation*Math.random();
         }
@@ -127,9 +183,18 @@ class Agent {
 
         // get pulse activation:
         let p = (this.phase + t);
-        this.active = 1-(p - ~~p);
+        //this.active = 1-(p - ~~p);
 
-        let speed = Math.pow(this.active, 3) * 3;
+        let dt = 1/100;
+
+        this.active -= (dt*this.rate + this.dphase);
+        if (this.active < 0) {
+            this.active += 1;
+        } else if (this.active > 1) {
+            this.active = 1;
+        }
+
+        let speed = Math.pow(this.active, 4) * 4;
         this.pos[0] += (this.speed * speed) * this.fwd[0];
         this.pos[1] += (this.speed * speed) * this.fwd[1];
         this.dir = Math.atan2(this.fwd[1], this.fwd[0]);
