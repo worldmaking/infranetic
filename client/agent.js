@@ -71,7 +71,7 @@ class Agent {
 
         let entrainment = 0.1;
         let deviation = 0.0;
-        let bias = 0.00;
+        let bias = 0.005;
         
         if (this.near.length > 1) {
             let pdavg = 0;
@@ -122,7 +122,7 @@ class Agent {
     move(world, t) {
         let r = 1000 - vec2.distance(this.pos, world.acc) * 0.002;
 
-        let phase = (this.phase + t*0.5);
+        let phase = (this.phase + t*0.25);
 
         // cosine curve
         //let p = 1 + Math.cos(Math.PI * phase);
