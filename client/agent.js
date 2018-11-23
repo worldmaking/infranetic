@@ -44,6 +44,9 @@ class Agent {
         let g1 = world.ways.readDot(s1[0], s1[1], this.scent)
         let g2 = world.ways.readDot(s2[0], s2[1], this.scent)
 
+        let data = [0, 0, 0, 0]
+        let g0 = world.data.readInto(this.pos[0], this.pos[1], data);
+
         let color = [0, 0, 0, 0];
         world.ways.readInto(s1[0], s1[1], color);
         if (color[3] == 0) {
