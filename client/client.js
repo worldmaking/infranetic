@@ -122,9 +122,10 @@ in vec2 a_position;
 in vec4 a_color;
 out vec4 color;
 uniform mat3 u_matrix;
+uniform float u_pointsize;
 void main() {
 	gl_Position = vec4((u_matrix * vec3(a_position.xy, 1)).xy, 0, 1);
-	gl_PointSize = 1.0;
+	gl_PointSize = u_pointsize * a_color.a;
 	color = a_color;
 }
 `, 
@@ -134,6 +135,10 @@ in vec4 color;
 out vec4 outColor;
 void main() {
 	outColor = color; //vec4(0, 0.5, 1, 1);
+	outColor.rgb *= outColor.a;
+	vec3 c = color.rgb;
+	float a = 0.1 + color.a*0.9;
+	outColor = vec4(c * a, 1);
 }
 `);
 
@@ -350,7 +355,7 @@ function update() {
 			colors[i*4] = a.scent[0];
 			colors[i*4+1] = a.scent[1];
 			colors[i*4+2] = a.scent[2];
-			colors[i*4+3] = 1;
+			colors[i*4+3] = a.active;
 		}
 
 		for (let a of agents) {
@@ -382,7 +387,7 @@ function update() {
 			gl.bindTexture(gl.TEXTURE_2D, fbo.front.id);
 			//gl.bindTexture(gl.TEXTURE_2D, chan1.id);
 			gl.useProgram(program_showtex);
-			let a = 0.995;
+			let a = 0.9; //0.995;
 			gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), a, a, a, a);
 			glQuad.bind().draw();
 
@@ -393,6 +398,7 @@ function update() {
 			];
 			gl.useProgram(program_agents);
 			gl.uniformMatrix3fv(gl.getUniformLocation(program_agents, "u_matrix"), false, viewmat);
+			gl.uniform1f(gl.getUniformLocation(program_agents, "u_pointsize"), 4);
 			agentsVao.bind().submit(agentsVao.positions).draw();
 
 			

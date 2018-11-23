@@ -19,6 +19,8 @@ class Agent {
         this.dir = Math.atan2(this.fwd[1], this.fwd[0]);
 
         this.scent = vec3.fromValues( 0.5, 0.5, 0.5 );
+        this.phase = Math.random();
+        this.active = 0;
 
         this.size = 1;
         this.speed = 2 * world.pixels_per_meter; // pixels per frame
@@ -67,20 +69,49 @@ class Agent {
 
         vec2.set(this.fwd, Math.cos(this.dir), Math.sin(this.dir))
 
-        if (false && this.near.length > 1) {
+        let entrainment = 0.1;
+        let deviation = 0.0;
+        let bias = 0.00;
+        
+        if (this.near.length > 1) {
+            let pdavg = 0;
             for (let n of this.near) {
                 if (n == this) continue;
-                // just a dumb exmaple proof of concept:
-                // bounce away from each other
-                let rel = vec2.create();
-                vec2.sub(rel, this.pos, n.pos);
-                let d2 = vec2.dot(rel, rel);
 
-                let amt = 1/10;///(1+d2);
-                vec2.normalize(rel, rel);
-                vec2.lerp(this.fwd, this.fwd, rel, amt);
-                vec2.set(this.side, this.fwd[1], -this.fwd[0]);
+                // get phase difference:
+                let pd = (n.phase - this.phase);
+                pdavg += (pd - Math.floor(pd + 0.5)); // wrapped into -0.5..0.5
+
+                if (0) {
+                    // just a dumb exmaple proof of concept:
+                    // bounce away from each other
+                    let rel = vec2.create();
+                    vec2.sub(rel, this.pos, n.pos);
+                    let d2 = vec2.dot(rel, rel);
+
+                    let amt = 1/10;///(1+d2);
+                    vec2.normalize(rel, rel);
+                    vec2.lerp(this.fwd, this.fwd, rel, amt);
+                    vec2.set(this.side, this.fwd[1], -this.fwd[0]);
+                }
             }
+            pdavg /= this.near.length;
+
+            let p1 = this.phase + entrainment*pdavg + deviation*(Math.random()-0.5) + bias;
+            if (p1 >= 1) {
+                p1 -= 1;
+            } else if (p1 < 0) {
+                p1 += 1;
+            }
+            this.phase = p1;
+        } else {
+            let p1 = this.phase + 0.000*Math.random();
+            if (p1 >= 1) {
+                p1 -= 1;
+            } else if (p1 < 0) {
+                p1 += 1;
+            }
+            this.phase = p1;
         }
 
         vec2.set(this.side, this.fwd[1], -this.fwd[0]);
@@ -89,12 +120,20 @@ class Agent {
     }
 
     move(world, t) {
-        let r = vec2.distance(this.pos, world.acc) * 0.002;
+        let r = 1000 - vec2.distance(this.pos, world.acc) * 0.002;
 
-        let p = 0.8+(Math.cos((Math.PI * 0.5 * t) - r));
+        let phase = (this.phase + t*0.5);
 
-        this.pos[0] += (this.speed * p) * this.fwd[0];
-        this.pos[1] += (this.speed * p) * this.fwd[1];
+        // cosine curve
+        //let p = 1 + Math.cos(Math.PI * phase);
+        // pulse
+        let p = 1-(phase - ~~phase);
+        this.active = p;
+
+        let speed = Math.pow(p, 3) * 3;
+
+        this.pos[0] += (this.speed * speed) * this.fwd[0];
+        this.pos[1] += (this.speed * speed) * this.fwd[1];
 
         this.dir = Math.atan2(this.fwd[1], this.fwd[0]);
 
