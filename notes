@@ -1,0 +1,13 @@
+
+I made agents 'die' if their reward is < 0.1, 
+and be reborn by copying another agent somewhere
+
+I disabled restoring the 'marks' array (data[3]) because it was expensive
+but still having the agents make marks (by setting data[3] = 0)
+
+what happens is that the population gradually recedes to a small area... 
+
+That is, if the agents remove the resources, the areas quickly go dark. Maybe this is one way to apply the immune system?
+
+
+
