@@ -12,11 +12,11 @@ const WebSocket = require('ws');
 const PNG = require("pngjs").PNG;
 const { vec2, vec3 } = require("gl-matrix");
 
-const neataptic = require("./client/node_modules/neataptic.js");
-const utils = require("./client/node_modules/utils.js");
-const SpaceHash = require("./client/node_modules/spacehash.js");
-const neato = require("./client/node_modules/neato.js");
-const Agent = require("./client/node_modules/agent.js");
+const neataptic = require("./client/libs/neataptic.js");
+const utils = require("./client/libs/utils.js");
+const SpaceHash = require("./client/libs/spacehash.js");
+const neato = require("./client/libs/neato.js");
+const Agent = require("./client/libs/agent.js");
 
 const project_path = process.cwd();
 const server_path = __dirname;

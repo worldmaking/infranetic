@@ -1,12 +1,12 @@
 
 (function() {
 	const isCommonjs = typeof module !== 'undefined' && module.exports;
-	const neataptic = isCommonjs ? require("neataptic.js") : window.neataptic;
+	const neataptic = isCommonjs ? require("./neataptic.js") : window.neataptic;
 	const neataptic_methods = neataptic.methods;
 	const Network = neataptic.Network;
 	const neataptic_architect = neataptic.architect;
 	neataptic.config.warnings = false;
-    const utils = isCommonjs ? require("utils.js") : window.utils;
+    const utils = isCommonjs ? require("./utils.js") : window.utils;
 
 	let neato = {
 		num_inputs: 2,

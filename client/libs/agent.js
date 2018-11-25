@@ -2,13 +2,13 @@
 
 (function() {
 	const isCommonjs = typeof module !== 'undefined' && module.exports;
-	const neataptic = isCommonjs ? require("neataptic.js") : window.neataptic;
+	const neataptic = isCommonjs ? require("./neataptic.js") : window.neataptic;
 	const neataptic_methods = neataptic.methods;
 	const Network = neataptic.Network;
 	const neataptic_architect = neataptic.architect;
     neataptic.config.warnings = false;
-    const neato = isCommonjs ? require("neato.js") : window.neato;
-    const utils = isCommonjs ? require("utils.js") : window.utils;
+    const neato = isCommonjs ? require("./neato.js") : window.neato;
+    const utils = isCommonjs ? require("./utils.js") : window.utils;
     
     const { vec2, vec3 } = isCommonjs ? require("gl-matrix") : window;
 
