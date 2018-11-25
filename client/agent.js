@@ -13,46 +13,43 @@ class Agent {
     }
 
     reset() {
-        this.network = neato.createNetwork();
-        this.near = [];
-
-        vec2.set(this.pos,
-            (Math.random() * world.size[0]),
-            (Math.random() * world.size[1]),
-        );
+        vec2.set(this.pos, Math.random() * world.size[0], Math.random() * world.size[1]);
         vec2.random(this.fwd, 1);
-        vec2.set(this.side, this.fwd[1], -this.fwd[0]);
         vec3.set(this.scent, 0.5, 0.5, 0.5 );
 
-        this.dir = Math.atan2(this.fwd[1], this.fwd[0]);
-        this.phase = Math.random();
         this.dphase = 0;
         this.rate = 1;
-        this.active = Math.random();
-        this.reward = 0.5;
         this.size = 1;
         this.speed = 4 * world.pixels_per_meter; // pixels per frame
 
-        
-        this.birthdate = new Date().toISOString().replace(/[-:.TZ]/g, " ");
+        this.reset_generic();
+        this.network = neato.createNetwork();
     }
 
-    copy(other) {
-        this.network = neato.copyNetwork(other.network);
-        this.near = [];
-
+    reset_copy(other) {
         vec2.copy(this.pos, other.pos);
         vec2.copy(this.fwd, other.fwd);
-        vec2.copy(this.side, other.side);
         vec3.copy(this.scent, other.scent);
-        this.dir = other.dir;
-        this.phase = Math.random();
+
         this.dphase = 0;
         this.rate = other.rate;
-        this.active = 1;
-        this.reward = 0.5;
         this.size = other.size;
-        this.speed = other.speed; // pixels per frame    
+        this.speed = other.speed; // pixels per frame  
+
+        this.reset_generic();  
+        this.network = neato.copyNetwork(other.network);
+    }
+
+    reset_generic() {
+        vec2.set(this.side, this.fwd[1], -this.fwd[0]);
+        this.dir = Math.atan2(this.fwd[1], this.fwd[0]);
+
+        this.phase = Math.random();
+        this.active = Math.random();
+        this.reward = 0.5;
+
+        this.birthdate = new Date().toISOString().replace(/[-:.TZ]/g, " ");
+        this.near = [];
     }
 
     update(world, agents) {    
@@ -87,7 +84,7 @@ class Agent {
         // simple reward for staying on the roads for now:
         this.reward = Math.max(this.reward * 0.99, wayfound * marked);
         if (this.reward < 0.1) {
-            this.copy(pick(agents));
+            this.reset_copy(pick(agents));
             return;
         }
 
