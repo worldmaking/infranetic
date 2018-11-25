@@ -15,6 +15,8 @@ class Agent {
     reset() {
         this.network = neato.createNetwork();
         this.near = [];
+        let date = new Date();
+        this.birthdate = date.toISOString();
 
         vec2.set(this.pos,
             (Math.random() * world.size[0]),
@@ -114,7 +116,7 @@ class Agent {
 
         vec2.set(this.fwd, Math.cos(this.dir), Math.sin(this.dir))
 
-        if (1) {
+        if (0) {
             this.scent[0] = this.reward;
             this.scent[1] = 0.5; //outputs[0];
             this.scent[2] = 1 - this.scent[0]; //outputs[1];

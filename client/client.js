@@ -375,15 +375,9 @@ in vec4 color;
 out vec4 outColor;
 void main() {
 	vec3 c = mix(color.rgb, vec3(0.5), 0.8);
-	outColor = vec4(c, color.a);
-	outColor *= 0.01;
+	outColor = vec4(c, color.a * 0.5);
 }
 `);
-
-
-// for (let i=0; i<linesVao.positions.length; i++) {
-// 	linesVao.positions[i] = Math.random() * world.size[1];
-// }
 for (let i=0; i<linesVao.indices.length; i++) {
 	linesVao.indices[i] = Math.floor(Math.random() * NUM_AGENTS);
 }
@@ -433,13 +427,14 @@ function update() {
 			let a = agents[i];
 			a.move(world, t);
 			space.updatePoint(a);
-			positions[i*2] = a.pos[0];
-			positions[i*2+1] = a.pos[1];
+			let id = a.id;
+			positions[id*2] = a.pos[0];
+			positions[id*2+1] = a.pos[1];
 
-			colors[i*4] = a.scent[0];
-			colors[i*4+1] = a.scent[1];
-			colors[i*4+2] = a.scent[2];
-			colors[i*4+3] = a.active;
+			colors[id*4] = a.scent[0];
+			colors[id*4+1] = a.scent[1];
+			colors[id*4+2] = a.scent[2];
+			colors[id*4+3] = a.active;
 
 			if (0) {
 
@@ -494,7 +489,8 @@ function update() {
 			}
 		}
 
-		for (let a of agents) {
+		for (let i=0; i<agents.length; i++) {
+			let a = agents[i];
 			let search_radius = 25;
 			a.near = space.searchUnique(a, search_radius, 8);
 			for (let n of a.near) {
@@ -504,6 +500,8 @@ function update() {
 			a.update(world, agents);
 		}
 		linesVao.count = Math.min(MAX_NUM_LINES, linecount);
+
+		
 		
 
 		fbo.begin();
@@ -560,7 +558,7 @@ function update() {
 	// fbo.bind().readPixels(); // SLOW!!!
 
 	let ctx = canvas.getContext("2d");
-	ctx.fillColor = "black";
+	ctx.fillStyle = "black";
 	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
 	let zoom = 16;
@@ -569,43 +567,19 @@ function update() {
 	let ycount = canvas.height / w;
 	let glw = w/2;
 	let i=0;
+	ctx.font = '10px sans-serif';
+	ctx.textBaseline = "top"
+	ctx.textAlign = "center"
+	ctx.fillStyle = "white"
 	for (let y=0; y<ycount; y++) {
 		for (let x=0; x<xcount; x++, i++) {
 			let a = agents[i];
 			ctx.drawImage(gl.canvas, 
 				a.pos[0]-glw/2, a.pos[1]-glw/2, glw, glw,
 				w*x+w/4, w*y+w/4, w/2, w/2);
+			ctx.fillText(a.birthdate, w*x+w/4 + w/4, w*y+w/4 + w/2);
 		}
 	}
-	
-	// ctx.save();
-	// {
-	// 	ctx.translate(focus[0], focus[1])
-	// 	ctx.scale(zoom, zoom);
-	// 	ctx.translate(-focus[0], -focus[1])
-		
-	// 	ctx.drawImage(gl.canvas, 0, 0);
-
-	// 	if (showgrid) {
-	// 		ctx.strokeStyle = "hsl(0,0%,100%,15%)"
-	// 		for (let y=0; y<canvas.height; y+=space.cellSize) {
-	// 			ctx.beginPath()
-	// 			ctx.moveTo(0, y)
-	// 			ctx.lineTo(canvas.width, y);
-	// 			ctx.stroke()
-	// 		}
-	// 		for (let x=0; x<canvas.width; x+=space.cellSize) {
-	// 			ctx.beginPath()
-	// 			ctx.moveTo(x, 0)
-	// 			ctx.lineTo(x, canvas.height);
-	// 			ctx.stroke()
-	// 		}
-	// 	}
-		
-	// }
-	// ctx.restore();
-
-
 	
 	if (1) {
 		let ctx = canvas2.getContext("2d");
@@ -630,6 +604,7 @@ function update() {
 	if (fps.t % 5 < fps.dt) {
 		console.log("fps: ", Math.floor(fps.fpsavg))
 		//refocus();
+		agents.sort((a, b) => b.reward - a.reward);
 	}
 }
 
@@ -650,7 +625,7 @@ window.addEventListener("keyup", function(event) {
 	} else if (event.key == "z") {
 		refocus();
 	} else if (event.key == "m") {
-		showmap = !showmap;
+		agents.sort((a, b) => b.reward - a.reward);
 	} else if (event.key == "g") {
 		showgrid = !showgrid;
 	} else if (event.key == "s") {
@@ -669,8 +644,9 @@ window.addEventListener("keyup", function(event) {
 agentsVao.create(gl, program_agents);
 
 for (let i=0; i<NUM_AGENTS; i++) {
-	agents.push(new Agent(i, world));
-	space.insertPoint(agents[i]);
+	let a = new Agent(i, world);
+	agents.push(a);
+	space.insertPoint(a);
 }
 
 let sock

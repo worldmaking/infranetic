@@ -55,7 +55,6 @@ class SpaceHash {
 		let maxRad2 = this.maxRadius*this.maxRadius;
 		for (let v=0; v<this.numCellsV; v++) {
 			for (let h=0; h<this.numCellsH; h++) {
-				let idx = v * this.numCellsH + h;
 				// squared radius of cell from cv,ch, in 'pixels':
 				let radius2 = ((v-cv)*(v-cv) + (h-ch)*(h-ch)) * (this.cellSize*this.cellSize); 
 		  		if (radius2 < maxRad2) {
