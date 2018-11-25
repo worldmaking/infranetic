@@ -274,6 +274,15 @@ function createPixelTexture(gl, width, height, floatingpoint=false) {
 
 function createFBO(gl, width, height, floatingpoint=false) {
     let id = gl.createFramebuffer();
+
+    let colorRenderbuffer = gl.createRenderbuffer();
+    gl.bindRenderbuffer(gl.RENDERBUFFER, colorRenderbuffer);
+    gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 4, gl.RGBA8, width, height);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, id);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, colorRenderbuffer);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
     console.log("FBO floating?", floatingpoint);
 
     let fbo = {
@@ -285,6 +294,12 @@ function createFBO(gl, width, height, floatingpoint=false) {
         
         bind() { 
             gl.bindFramebuffer(gl.FRAMEBUFFER, this.id); 
+
+            //gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 4, gl.RBGA4, 256, 256);
+            return this; 
+        },
+        clear(r=0, g=0, b=0, a=1) {
+            gl.clearBufferfv(gl.COLOR, 0, [r, g, b, a]);
             return this; 
         },
         unbind() { 
@@ -302,15 +317,27 @@ function createFBO(gl, width, height, floatingpoint=false) {
             let mipLevel = 0;               // the largest mip
             gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, this.back.id, mipLevel);
             gl.viewport(0, 0, width, height);
+            return this; 
         },
         
         end() {
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
             this.swap();
-            gl.viewport(0, 0, canvas.width, canvas.height);
+            return this; 
         },
 
-
+        blit(dstid) {
+            // Blit framebuffers, no Multisample texture 2d in WebGL 2
+            gl.bindFramebuffer(gl.READ_FRAMEBUFFER, this.id);
+            gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, dstid);
+            //gl.clearBufferfv(gl.COLOR, 0, [0.0, 0.0, 0.0, 1.0]);
+            gl.blitFramebuffer(
+                0, 0, this.front.width, this.front.height,
+                0, 0, this.front.width, this.front.height,
+                gl.COLOR_BUFFER_BIT, gl.NEAREST // NEAREST is the only valid option at the moment
+            );
+            return this;
+        },
 
         // reads the GPU memory back into this.data
         // must bind() first!

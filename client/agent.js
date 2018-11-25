@@ -48,7 +48,7 @@ class Agent {
         this.active = Math.random();
         this.reward = 0.5;
 
-        this.birthdate = new Date().toISOString().replace(/[-:.TZ]/g, " ");
+        this.birthdate = new Date().toISOString().replace(/[-:.TZ]/g, "").substring(4);
         this.near = [];
     }
 

@@ -1,5 +1,9 @@
-let glcanvas = document.createElement("canvas");
-let gl = glcanvas.getContext("webgl2", {
+
+let canvas = document.getElementById("canvas");
+let canvas2 = document.getElementById("canvas2");
+//let glcanvas = document.createElement("canvas");
+
+let gl = canvas2.getContext("webgl2", {
 	antialias: false,
 	alpha: false
 });
@@ -52,10 +56,8 @@ let running = true;
 let showmap = false;
 let showgrid = false;
 
-let canvas = document.getElementById("canvas");
 canvas.width = world.size[0];
 canvas.height = world.size[1]; 
-let canvas2 = document.getElementById("canvas2");
 canvas2.width = world.size[0];
 canvas2.height = world.size[1]; 
 gl.canvas.width = world.size[0];
@@ -93,15 +95,15 @@ function resize() {
 	console.log(w, h);
 	let window_aspect = w/h;
 	let canvas_aspect = world.aspect/window_aspect;
-	canvas.width = w;
-	canvas.height = h;
+	//canvas.width = w;
+	//canvas.height = h;
 	canvas.style.width = canvas.width + "px";
 	canvas.style.height = canvas.height + "px";
 
-	canvas2.width = canvas.width;
-	canvas2.height = canvas.height;
-	canvas2.style.width = canvas2.width + "px";
-	canvas2.style.height = canvas2.height + "px";
+	//canvas2.width = canvas.width;
+	//canvas2.height = canvas.height;
+	canvas2.style.width = w + "px";
+	canvas2.style.height = h + "px";
 }
 
 let fbo = createFBO(gl, gl.canvas.width, gl.canvas.height, true);
@@ -131,23 +133,37 @@ gl.uniform1i(gl.getUniformLocation(program_showtex, "u_image"), 0);
 gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), 1, 1, 1, 0.02);
 
 let slab_composite = createSlab(gl, `#version 300 es
-precision mediump float;
+precision highp float;
 uniform sampler2D u_image;
 uniform sampler2D u_data;
 uniform vec4 u_color;
 in vec2 v_texCoord;
 out vec4 outColor;
 void main() {
-	vec2 uv1 = vec2(v_texCoord.x, 1.-v_texCoord.y);
+	vec2 uv = v_texCoord.xy;
+	//uv = 0.5 + uv*0.1;
+	vec2 uv1 = vec2(uv.x, 1.-uv.y);
 	vec4 data = texture(u_data, uv1);
 	float ways = data.r;
 	float altitude = data.g;
 	float areas = data.b;
 	float marks = data.a;
-	vec4 image = texture(u_image, v_texCoord);
+
+	vec2 texSize = vec2(3231, 2160);
+	vec2 onePixel = vec2(1.0, 1.0) / texSize;
+
+	vec4 image = texture(u_image, uv);
+	
+	vec4 image1 = texture(u_image, uv+vec2(onePixel.x, 0.));
+	vec4 image2 = texture(u_image, uv+vec2(0., onePixel.y));
+
+	image = (image + image1 + image2) / 3.;
+
 	outColor = image * u_color;
 	//outColor.rgb += vec3(ways) * 0.15;
 	//outColor.r += float(marks) * 0.5;
+
+	//outColor.rgb = 1.-outColor.rgb;
 }
 `,{
 	"u_image": [0],
@@ -504,11 +520,8 @@ function update() {
 		
 		
 
-		fbo.begin();
+		fbo.begin().clear();
 		{
-			
-			gl.clearColor(0, 0, 0, 1); // background colour
-			gl.clear(gl.COLOR_BUFFER_BIT);
 			gl.lineWidth(0.1);
 			gl.enable(gl.BLEND);
 			//gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -591,18 +604,18 @@ function update() {
 		}
 	}
 	
-	if (1) {
+	if (0) {
 		let ctx = canvas2.getContext("2d", { antialias: true, alpha: false });
-		let rr = (glcanvas.width/glcanvas.height) / (canvas.width/canvas.height);
+		let rr = (gl.canvas.width/gl.canvas.height) / (canvas.width/canvas.height);
 		if (rr > 1) {
 			let h = Math.floor(canvas.height / rr);
 			ctx.drawImage(gl.canvas, 
-				0, 0, glcanvas.width, glcanvas.height,
+				0, 0, gl.canvas.width, gl.canvas.height,
 				0, (canvas.height-h)/2, canvas.width, h);
 		} else {
 			let w = Math.floor(canvas.width * rr);
 			ctx.drawImage(gl.canvas, 
-				0, 0, glcanvas.width, glcanvas.height,
+				0, 0, gl.canvas.width, gl.canvas.height,
 				Math.floor((canvas.width-w)/2), 0, w, canvas.height);
 		}
 	} 

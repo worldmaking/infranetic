@@ -9,5 +9,38 @@ what happens is that the population gradually recedes to a small area...
 
 That is, if the agents remove the resources, the areas quickly go dark. Maybe this is one way to apply the immune system?
 
+--
+
+improve: rendering quality (looks all aliased)
+
+label
+birthregion_time_countsofchangeinregion_currentregion
+- prefix name with region codes (natural, cultural, industrial as N, C, I etc.)
+- remove year from date
+- remove space (underbar or none)
+- monospace font
+- greyer (or more transparent)
+- align left
+
+Initialize agents by region, with on/off genes, controlling behaviour style, speed, maybe threshold etc?
+
+Balance between +ve and -ve feedback
+- make 10% non-homeostatic, 
+- not sure yet what to apply this to
+
+Currently share network & color
+- e.g. share 'fake news', share a lie, or something... or share 'urge to mutate'
+- or also share resources (and need to maintain a minimum?)
+
+Missing surveillance
+
+make children size/speed different?
 
 
+according to info, 1 or 2 regions trigger abnormal reaction such as direction bias, change of direction of pursuing, more dramatic speed/lifespan change
+- make this more visible e.g. smearing, bigger vibration (local quake)
+- passing effect, or requires observer to rebalance
+
+Sound
+
+Slime or 2d metaball shading, or reaction diffusion shading
