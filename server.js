@@ -5,11 +5,18 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const assert = require("assert");
+const performance = require('perf_hooks').performance;
 
 const express = require('express');
 const WebSocket = require('ws');
-const glmatrix = require("gl-matrix");
-const vec2 = glmatrix.vec2;
+const PNG = require("pngjs").PNG;
+const { vec2, vec3 } = require("gl-matrix");
+
+const neataptic = require("./client/node_modules/neataptic.js");
+const utils = require("./client/node_modules/utils.js");
+const SpaceHash = require("./client/node_modules/spacehash.js");
+const neato = require("./client/node_modules/neato.js");
+const Agent = require("./client/node_modules/agent.js");
 
 const project_path = process.cwd();
 const server_path = __dirname;
@@ -18,6 +25,188 @@ console.log("project_path", project_path);
 console.log("server_path", server_path);
 console.log("client_path", client_path);
 
+
+// loads an image and turns it into a typedarray and offscreen canvas
+class ArrayFromImg {
+	constructor(filename) {
+		console.log('reading', filename)
+		let png = PNG.sync.read(fs.readFileSync(filename));
+		this.width = png.width;
+		this.height = png.height;
+		this.length = this.width * this.height;
+		let binary = new Uint8ClampedArray(png.data);
+		let data = new Float32Array(this.length*4);
+		for (let i=0; i<this.length; i++) {
+			data[i*4+0] = (binary[i*4+0] / 255);
+			data[i*4+1] = (binary[i*4+1] / 255);
+			data[i*4+2] = (binary[i*4+2] / 255);
+			data[i*4+3] = (binary[i*4+3] / 255);
+		}
+
+		this.data = data;
+	}
+
+	setA(x, y, a) {
+		if (!this.data) return 0;
+
+		let idx = 4*(Math.floor(x) + Math.floor(y) * this.width);
+		this.data[idx+3] = a;
+	}
+
+	read(x, y) {
+		if (!this.data) return 0;
+
+		let idx = 4*(Math.floor(x) + Math.floor(y) * this.width);
+		return this.data[idx+1];
+	}
+
+	readInto(x, y, v) {
+		if (this.data) {
+			let idx = 4*(Math.floor(x) + Math.floor(y) * this.width);
+			v[0] = this.data[idx];
+			v[1] = this.data[idx+1];
+			v[2] = this.data[idx+2];
+			v[3] = this.data[idx+3];
+		}
+		return v;
+	}
+
+	readDot(x, y, xyz) {
+		if (!this.data) return 0;
+		let idx = 4*(Math.floor(x) + Math.floor(y) * this.width);
+		return this.data[idx] * xyz[0]
+			 + this.data[idx+1] * xyz[1]
+			 + this.data[idx+2] * xyz[2];
+	}
+};
+
+////////////////////////
+
+const NUM_AGENTS = 5000;
+const MAX_NEIGHBOURS = 4;
+const MAX_LINE_POINTS = NUM_AGENTS*MAX_NEIGHBOURS;
+
+const world = {
+	meters: [34976, 23376], // meters
+	size: [3231, 2160], // pixels
+	aspect: 34976/23376,
+	meters_per_pixel: 23376 / 2160, // approximately 10m per pixel
+	pixels_per_meter: 2160 / 23376, 
+	norm: [1/3231, 1/2160],
+
+	// coordinates of the ACC in this space
+	acc: [2382, 1162],
+
+	ways: new ArrayFromImg(path.join(client_path, "img", 'ways2.png')),
+	areas: new ArrayFromImg(path.join(client_path, "img", 'areas.png')),
+	data: new ArrayFromImg(path.join(client_path, "img", 'data.png')),
+
+	
+
+};
+world.aspect = world.meters[0]/world.meters[1];
+world.size[0] = Math.floor(world.size[1] * world.aspect);
+world.meters_per_pixel = world.meters[1] / world.size[1];
+world.pixels_per_meter = 1/world.meters_per_pixel;
+world.norm = [1/world.size[0], 1/world.size[1]];
+
+const floatBytes = 4;
+const shortBytes = 2;
+const agentsBuffer = new ArrayBuffer(
+	NUM_AGENTS * floatBytes * 6 + MAX_LINE_POINTS * shortBytes
+);
+let agent_positions = new Float32Array(agentsBuffer, 0, NUM_AGENTS * 2);
+let agent_colors = new Float32Array(agentsBuffer, agent_positions.byteLength, NUM_AGENTS * 4);
+let agent_lines = new Uint16Array(agentsBuffer, agent_colors.byteOffset + agent_colors.byteLength, MAX_LINE_POINTS); 
+
+console.log(agentsBuffer.byteLength);
+console.log(agent_positions.byteOffset, agent_positions.byteLength);
+console.log(agent_colors.byteOffset, agent_colors.byteLength);
+console.log(agent_lines.byteOffset, agent_lines.byteLength);
+
+let agents = [];
+let space = new SpaceHash({
+	width: world.size[0],
+	height: world.size[1],
+	cellSize: 25
+});
+
+world.agents = agents;
+
+let fps = new utils.FPS();
+let running = true;
+let audioLoopSeconds = 2;
+
+
+function update() {
+	//requestAnimationFrame(update);
+	setTimeout(update, 1000/60);
+
+	let t = fps.t / audioLoopSeconds;
+
+	// if (0) {
+	// 	let d = world.data.data;
+	// 	if (d) {
+	// 		for (let i=3; i<d.length; i+=4) {
+	// 			d[i] += 0.03 * (1.-d[i]);
+	// 		}
+	// 	}
+	// }
+
+	if (running) {
+		let positions = agent_positions;
+		let colors = agent_colors;
+		let lines = agent_lines;
+		let linecount = 0;
+
+		for (let i=0; i<agents.length; i++) {
+			let a = agents[i];
+			a.move(world, fps.dt);
+			space.updatePoint(a);
+
+			let id = a.id;
+			positions[id*2] = a.pos[0];
+			positions[id*2+1] = a.pos[1];
+			colors[id*4] = a.scent[0];
+			colors[id*4+1] = a.scent[1];
+			colors[id*4+2] = a.scent[2];
+			colors[id*4+3] = a.active;
+		}
+
+		for (let i=0; i<agents.length; i++) {
+			let a = agents[i];
+			let search_radius = 25;
+			a.near = space.searchUnique(a, search_radius, MAX_NEIGHBOURS);
+			if (linecount < MAX_LINE_POINTS) {
+				for (let n of a.near) {
+					lines[linecount++] = a.id;
+					lines[linecount++] = n.id;
+				}
+			}
+			a.update(world, agents);
+		}
+		//linesVao.count = Math.min(MAX_LINE_POINTS, linecount);
+	}
+
+	fps.tick();
+	if (fps.t % 5 < fps.dt) {
+		console.log("fps: ", Math.floor(fps.fpsavg))
+		//refocus();
+		agents.sort((a, b) => b.reward - a.reward);
+	}
+
+
+	//console.log(agentsBuffer.byteLength, utils.pick(agent_lines));
+	send_all_clients(agentsBuffer);
+}
+
+for (let i=0; i<NUM_AGENTS; i++) {
+	let a = new Agent(i, world);
+	agents.push(a);
+	space.insertPoint(a);
+}
+
+////////////////////////
 
 const app = express();
 app.use(express.static(client_path))
@@ -109,3 +298,5 @@ function handlemessage(msg, session) {
 server.listen(8080, function() {
 	console.log(`server listening on http://localhost:${server.address().port}`, );
 });
+
+update();

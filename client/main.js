@@ -40,9 +40,9 @@ world.meters_per_pixel = world.meters[1] / world.size[1];
 world.pixels_per_meter = 1/world.meters_per_pixel;
 world.norm = [1/world.size[0], 1/world.size[1]];
 
-
 const NUM_AGENTS = 5000;
-const MAX_NUM_LINES = NUM_AGENTS*4;
+const MAX_NEIGHBOURS = 4;
+const MAX_LINE_POINTS = NUM_AGENTS*MAX_NEIGHBOURS;
 let agents = [];
 let space = new SpaceHash({
 	width: world.size[0],
@@ -50,7 +50,7 @@ let space = new SpaceHash({
 	cellSize: 25
 });
 
-let fps = new FPS();
+let fps = new utils.FPS();
 let running = true;
 
 let showmap = false;
@@ -132,11 +132,13 @@ gl.useProgram(program_showtex);
 gl.uniform1i(gl.getUniformLocation(program_showtex, "u_image"), 0);
 gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), 1, 1, 1, 0.02);
 
+let slab_composite_invert = 0;
 let slab_composite = createSlab(gl, `#version 300 es
 precision highp float;
 uniform sampler2D u_image;
 uniform sampler2D u_data;
 uniform vec4 u_color;
+uniform float u_invert;
 in vec2 v_texCoord;
 out vec4 outColor;
 void main() {
@@ -159,16 +161,23 @@ void main() {
 
 	image = (image + image1 + image2) / 3.;
 
-	outColor = image * u_color;
+	outColor = image;// * u_color;
 	//outColor.rgb += vec3(ways) * 0.15;
 	//outColor.r += float(marks) * 0.5;
 
 	//outColor.rgb = 1.-outColor.rgb;
+
+	float gamma = 2.2;
+    outColor.rgb = pow(outColor.rgb, vec3(1.0/gamma));
+
+	outColor.rgb = mix(outColor.rgb, 1.-outColor.rgb, u_invert);
+
 }
 `,{
 	"u_image": [0],
 	"u_data": [1],
-	"u_color": [1, 1, 1, 1]
+	"u_color": [1, 1, 1, 1],
+	"u_invert": [slab_composite_invert],
 })
 
 
@@ -300,7 +309,7 @@ let linesVao = {
 	positionBuffer: agentsVao.positionBuffer,
 	colorBuffer: agentsVao.colorBuffer,
 
-	indices: new Uint16Array(MAX_NUM_LINES),
+	indices: new Uint16Array(MAX_LINE_POINTS),
 	indexBuffer: gl.createBuffer(),
 	count: 0,
 
@@ -390,8 +399,8 @@ precision mediump float;
 in vec4 color;
 out vec4 outColor;
 void main() {
-	vec3 c = mix(color.rgb, vec3(0.5), 0.8);
-	outColor = vec4(c, color.a * 0.5);
+	vec3 c = mix(color.rgb, vec3(0.5), 0.1);
+	outColor = vec4(c, color.a * 0.);
 }
 `);
 for (let i=0; i<linesVao.indices.length; i++) {
@@ -407,119 +416,21 @@ function refocus() {
 	zoom = (zoom == 1) ? 2 + Math.floor(Math.random() * 8) : 1;
 }
 
+let dirty = false;
+
 function update() {
 	requestAnimationFrame(update);
 
-	if (0) {
-		let d = world.data.data;
-		if (d) {
-			for (let i=3; i<d.length; i+=4) {
-				d[i] += 0.03 * (1.-d[i]);
-			}
-		}
-	}
+	if (!dirty) return;
+	
+	dirty = false;
+
 	let t = fps.t / audioLoopSeconds;
 
-	let audioChannel0 = audioBuffer.getChannelData(0);
-	let audioChannel1 = audioBuffer.getChannelData(1);
-	if (0) {
-		// decay audio:
-		let audioDecay = 0.9;
-		for (let channel = 0; channel < audioChannels; channel++) {
-			// This gives us the actual array that contains the data
-			let bufferChannel = audioBuffer.getChannelData(channel);
-			for (let i = 0; i < audioFrames; i++) {
-				bufferChannel[i] *= audioDecay;
-			}
-		}
-	}
-
 	if (running) {
-		let positions = agentsVao.positions;
-		let colors = agentsVao.colors;
-		let linecount = 0;
 
-		for (let i=0; i<agents.length; i++) {
-			let a = agents[i];
-			a.move(world, t);
-			space.updatePoint(a);
-			let id = a.id;
-			positions[id*2] = a.pos[0];
-			positions[id*2+1] = a.pos[1];
-
-			colors[id*4] = a.scent[0];
-			colors[id*4+1] = a.scent[1];
-			colors[id*4+2] = a.scent[2];
-			colors[id*4+3] = a.active;
-
-			if (0) {
-
-				let idx = Math.floor(a.phase * audioFrames);
-				let pan = a.pos[0] / world.size[0];
-				let pan1 = 1-pan;
-
-				let len = 160;
-				let f = 1 + (Math.pow(a.scent[0], 4) * 10);
-				let z = 0;
-				let dz = 1/len;
-				let e = 0.1;
-				let env = 0;
-				let de = Math.pow(0.001, 1/len)
-
-
-				for (let s=0; s<len; s++) {
-					let sidx = (idx + s) % audioFrames;
-					z += dz;
-					e *= de;
-					env += 0.1 * (e-env);
-					//let w = 0.02 * Math.sin(Math.PI * z * f) * Math.sin(Math.PI * z);
-					let w = Math.sin(Math.PI * z * f) * env;
-					audioChannel0[sidx] += w * pan1;
-					audioChannel1[sidx] += w * pan;
-				}
-			} 
-			if (0) {
-				let idx = Math.floor(a.phase * audioFrames);
-				let pan = a.pos[0] / world.size[0];
-				let pan1 = 1-pan;
-
-				let len = 64;
-				let f = (Math.pow(a.scent[0], 2) * 8);
-				let z = 0;
-				let dz = f/len;
-				let e = 0.01;
-				let env = 0;
-				let de = Math.pow(0.001, 1/len)
-
-
-				for (let s=0; s<len; s++) {
-					let sidx = (idx + s) % audioFrames;
-					z += dz;
-					e *= de;
-					env += 0.3 * (e-env);
-					//let w = 0.02 * Math.sin(Math.PI * z * f) * Math.sin(Math.PI * z);
-					let w = Math.sin(Math.PI * z) * env;
-					audioChannel0[sidx] += w * pan1;
-					audioChannel1[sidx] += w * pan;
-				}
-			}
-		}
-
-		for (let i=0; i<agents.length; i++) {
-			let a = agents[i];
-			let search_radius = 25;
-			a.near = space.searchUnique(a, search_radius, 8);
-			for (let n of a.near) {
-				linesVao.indices[linecount++] = a.id;
-				linesVao.indices[linecount++] = n.id;
-			}
-			a.update(world, agents);
-		}
-		linesVao.count = Math.min(MAX_NUM_LINES, linecount);
-
+		linesVao.count = MAX_LINE_POINTS;
 		
-		
-
 		fbo.begin().clear();
 		{
 			gl.lineWidth(0.1);
@@ -566,7 +477,9 @@ function update() {
 
 	fbo.front.bind(0);
 	world.data.bind(1); //.submit();
-	slab_composite.use().draw();
+	slab_composite.use();
+	slab_composite.uniform("u_invert", slab_composite_invert);
+	slab_composite.draw();
 
 	// fbo.bind().readPixels(); // SLOW!!!
 
@@ -627,7 +540,7 @@ function update() {
 	if (fps.t % 5 < fps.dt) {
 		console.log("fps: ", Math.floor(fps.fpsavg))
 		//refocus();
-		agents.sort((a, b) => b.reward - a.reward);
+		//agents.sort((a, b) => b.reward - a.reward);
 	}
 }
 
@@ -649,8 +562,8 @@ window.addEventListener("keyup", function(event) {
 		refocus();
 	} else if (event.key == "m") {
 		agents.sort((a, b) => b.reward - a.reward);
-	} else if (event.key == "g") {
-		showgrid = !showgrid;
+	} else if (event.key == "i") {
+		slab_composite_invert = (slab_composite_invert) ? 0 : 1;
 	} else if (event.key == "s") {
 		// `frame${frame.toString().padStart(5, '0')}.png`;
 		saveCanvasToPNG(canvas, "result");
@@ -682,7 +595,24 @@ try {
 			},
 			onmessage: function(msg) { 
 				print("received", msg);
-			}
+			},
+			onbuffer(data, byteLength) {
+				//console.log("received arraybuffer of " + byteLength + " bytes");
+				//console.log(agentsVao.positions.byteLength + agentsVao.colors.byteLength + linesVao.indices.byteLength);
+				//console.log(data)
+				// copy to agentsVao:
+				//let fa = new Float32Array(data);
+				//agentsVao.positions = fa.subarray(0, NUM_AGENTS*2);
+				//agentsVao.positions.set(fa);
+
+				agentsVao.positions = new Float32Array(data, 0, NUM_AGENTS*2);
+				agentsVao.colors = new Float32Array(data, agentsVao.positions.byteLength, NUM_AGENTS*4);
+				linesVao.indices = new Uint16Array(data, agentsVao.colors.byteLength + agentsVao.colors.byteOffset, MAX_LINE_POINTS);
+
+				dirty = true;
+
+				//console.log(utils.pick(linesVao.indices));
+			},
 		});
 	}
 } catch (e) {
