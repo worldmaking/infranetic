@@ -128,7 +128,7 @@ let agents = [];
 let space = new SpaceHash({
 	width: world.size[0],
 	height: world.size[1],
-	cellSize: 25
+	cellSize: 32
 });
 
 world.agents = agents;

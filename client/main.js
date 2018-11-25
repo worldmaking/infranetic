@@ -167,7 +167,7 @@ void main() {
 
 	//outColor.rgb = 1.-outColor.rgb;
 
-	float gamma = 2.2;
+	float gamma = 1.5;
     outColor.rgb = pow(outColor.rgb, vec3(1.0/gamma));
 
 	outColor.rgb = mix(outColor.rgb, 1.-outColor.rgb, u_invert);
