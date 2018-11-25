@@ -1,3 +1,16 @@
+let glcanvas = document.createElement("canvas");
+let gl = glcanvas.getContext("webgl2", {
+	antialias: true,
+	alpha: true
+});
+if (!gl) {
+	alert("Browser error: unable to acquire webgl2 context");
+}
+const ext = gl.getExtension("EXT_color_buffer_float");
+if (!ext) {
+	alert("Browser error: need EXT_color_buffer_float");
+}
+
 
 const world = {
 	meters: [34976, 23376], // meters
@@ -12,13 +25,17 @@ const world = {
 
 	ways: new ArrayFromImg('img/ways2.png'),
 	areas: new ArrayFromImg('img/areas.png'),
-	data: new ArrayFromImg('img/data.png'),
+
+	idx(pos) {
+		return Math.floor(pos[1])*this.size[0] + Math.floor(pos[0]);
+	},
 };
 world.aspect = world.meters[0]/world.meters[1];
-world.size[0] = world.size[1] * world.aspect;
+world.size[0] = Math.floor(world.size[1] * world.aspect);
 world.meters_per_pixel = world.meters[1] / world.size[1];
 world.pixels_per_meter = 1/world.meters_per_pixel;
 world.norm = [1/world.size[0], 1/world.size[1]];
+
 
 const NUM_AGENTS = 5000;
 const MAX_NUM_LINES = NUM_AGENTS*4;
@@ -41,20 +58,35 @@ canvas.height = world.size[1];
 let canvas2 = document.getElementById("canvas2");
 canvas2.width = world.size[0];
 canvas2.height = world.size[1]; 
-let glcanvas = document.createElement("canvas");
-let gl = glcanvas.getContext("webgl2", {
-	antialias: true,
-	alpha: true
-});
-if (!gl) {
-	alert("Browser error: unable to acquire webgl2 context");
-}
-const ext = gl.getExtension("EXT_color_buffer_float");
-if (!ext) {
-	alert("Browser error: need EXT_color_buffer_float");
-}
 gl.canvas.width = world.size[0];
 gl.canvas.height = world.size[1];
+
+
+world.data = createPixelTexture(gl, world.size[0], world.size[1], true).load("img/data.png");
+
+// let dataTex = createPixelTexture(gl, world.size[0], world.size[1]).allocate(); //loadTexture(gl, 'img/data.png', true);
+// world.data = new ArrayFromImg('img/data.png', function() {
+// 	// console.log(this);
+// 	// console.log(this.imgdata.data.length, dataTex.data.length);
+// 	// console.log(dataTex.data)
+// 	let binary = new Uint8Array(this.imgdata.data.buffer);
+// 	// copy (with flip):
+
+// 	for (let y=0; y<this.height; y++) {
+// 		let y1 = this.height - y - 1;
+// 		for (let x=0; x<this.width; x++) {
+// 			let x0 = (x + y*this.width)*4;
+// 			let x1 = (x + y1*this.width)*4;
+// 			for (let c=0; c<4; c++) {
+// 				dataTex.data[x0+c] = binary[x1+c];
+// 			}
+// 		}
+// 	}
+// 	//console.log(dataTex.data)
+// 	dataTex.bind().submit();
+
+// 	world.dataTexData = dataTex.data;
+// })
 
 function resize() {
 	let w = window.innerWidth, h = window.innerHeight;
@@ -101,16 +133,25 @@ gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), 1, 1, 1, 0.02);
 let slab_composite = createSlab(gl, `#version 300 es
 precision mediump float;
 uniform sampler2D u_image;
+uniform sampler2D u_data;
 uniform vec4 u_color;
 in vec2 v_texCoord;
 out vec4 outColor;
 void main() {
-	outColor = texture(u_image, v_texCoord).rgba * u_color;
-	// invert:
-	//outColor.rgb = 1.-outColor.rgb;
+	vec2 uv1 = vec2(v_texCoord.x, 1.-v_texCoord.y);
+	vec4 data = texture(u_data, uv1);
+	float ways = data.r;
+	float altitude = data.g;
+	float areas = data.b;
+	float marks = data.a;
+	vec4 image = texture(u_image, v_texCoord);
+	outColor = image * u_color;
+	//outColor.rgb += vec3(ways) * 0.15;
+	//outColor.r += float(marks) * 0.5;
 }
 `,{
 	"u_image": [0],
+	"u_data": [1],
 	"u_color": [1, 1, 1, 1]
 })
 
@@ -218,7 +259,8 @@ uniform mat3 u_matrix;
 uniform float u_pointsize;
 void main() {
 	gl_Position = vec4((u_matrix * vec3(a_position.xy, 1)).xy, 0, 1);
-	gl_PointSize = u_pointsize * a_color.a;
+	float a = 0.3 + a_color.a*0.7;
+	gl_PointSize = u_pointsize * a;
 	color = a_color;
 }
 `, 
@@ -230,10 +272,12 @@ void main() {
 	outColor = color; //vec4(0, 0.5, 1, 1);
 	outColor.rgb *= outColor.a;
 	vec3 c = color.rgb;
-	float a = 0.1 + color.a*color.a*0.9;
+	float a = 0.3 + color.a*color.a*0.7;
 	outColor = vec4(c * a, 1);
 }
 `);
+gl.useProgram(program_agents);
+gl.uniform1f(gl.getUniformLocation(program_agents, "u_pointsize"), 2);
 
 let linesVao = {
 	id: gl.createVertexArray(),
@@ -332,7 +376,7 @@ out vec4 outColor;
 void main() {
 	vec3 c = mix(color.rgb, vec3(0.5), 0.8);
 	outColor = vec4(c, color.a);
-	//outColor = vec4(vec3(0.5), 1) * 0.01;
+	outColor *= 0.01;
 }
 `);
 
@@ -356,20 +400,30 @@ function refocus() {
 function update() {
 	requestAnimationFrame(update);
 
+	if (0) {
+		let d = world.data.data;
+		if (d) {
+			for (let i=3; i<d.length; i+=4) {
+				d[i] += 0.03 * (1.-d[i]);
+			}
+		}
+	}
 	let t = fps.t / audioLoopSeconds;
 
-	// decay audio:
-	let audioDecay = 0.9;
 	let audioChannel0 = audioBuffer.getChannelData(0);
 	let audioChannel1 = audioBuffer.getChannelData(1);
-	for (let channel = 0; channel < audioChannels; channel++) {
-        // This gives us the actual array that contains the data
-        let bufferChannel = audioBuffer.getChannelData(channel);
-        for (let i = 0; i < audioFrames; i++) {
-            bufferChannel[i] *= audioDecay;
-        }
-    }
-	
+	if (0) {
+		// decay audio:
+		let audioDecay = 0.9;
+		for (let channel = 0; channel < audioChannels; channel++) {
+			// This gives us the actual array that contains the data
+			let bufferChannel = audioBuffer.getChannelData(channel);
+			for (let i = 0; i < audioFrames; i++) {
+				bufferChannel[i] *= audioDecay;
+			}
+		}
+	}
+
 	if (running) {
 		let positions = agentsVao.positions;
 		let colors = agentsVao.colors;
@@ -387,7 +441,7 @@ function update() {
 			colors[i*4+2] = a.scent[2];
 			colors[i*4+3] = a.active;
 
-			if (i < 0) {
+			if (0) {
 
 				let idx = Math.floor(a.phase * audioFrames);
 				let pan = a.pos[0] / world.size[0];
@@ -412,7 +466,8 @@ function update() {
 					audioChannel0[sidx] += w * pan1;
 					audioChannel1[sidx] += w * pan;
 				}
-			} else {
+			} 
+			if (0) {
 				let idx = Math.floor(a.phase * audioFrames);
 				let pan = a.pos[0] / world.size[0];
 				let pan1 = 1-pan;
@@ -446,7 +501,7 @@ function update() {
 				linesVao.indices[linecount++] = a.id;
 				linesVao.indices[linecount++] = n.id;
 			}
-			a.update(world);
+			a.update(world, agents);
 		}
 		linesVao.count = Math.min(MAX_NUM_LINES, linecount);
 		
@@ -468,7 +523,7 @@ function update() {
 			gl.bindTexture(gl.TEXTURE_2D, fbo.front.id);
 			//gl.bindTexture(gl.TEXTURE_2D, chan1.id);
 			gl.useProgram(program_showtex);
-			let a = 0.9; //0.995;
+			let a = 0.99; //0.995;
 			gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), a, a, a, 1);
 			glQuad.bind().draw();
 
@@ -479,7 +534,6 @@ function update() {
 			];
 			gl.useProgram(program_agents);
 			gl.uniformMatrix3fv(gl.getUniformLocation(program_agents, "u_matrix"), false, viewmat);
-			gl.uniform1f(gl.getUniformLocation(program_agents, "u_pointsize"), 4);
 			agentsVao.bind().submit(agentsVao.positions).draw();
 
 			
@@ -499,8 +553,8 @@ function update() {
 
 
 
-	gl.activeTexture(gl.TEXTURE0 + 0);
-	gl.bindTexture(gl.TEXTURE_2D, fbo.front.id);
+	fbo.front.bind(0);
+	world.data.bind(1); //.submit();
 	slab_composite.use().draw();
 
 	// fbo.bind().readPixels(); // SLOW!!!
@@ -509,7 +563,7 @@ function update() {
 	ctx.fillColor = "black";
 	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-	let zoom = 32;
+	let zoom = 16;
 	let w = gl.canvas.width/zoom;
 	let xcount = canvas.width / w;
 	let ycount = canvas.height / w;
@@ -567,14 +621,6 @@ function update() {
 				0, 0, glcanvas.width, glcanvas.height,
 				Math.floor((canvas.width-w)/2), 0, w, canvas.height);
 		}
-	}
-
-	if (0) {
-		canvastex2.bind().submit();
-		
-		//gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-		//gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-		slab_composite2.use().draw();
 	}
 
 

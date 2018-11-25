@@ -81,6 +81,64 @@ function makeBuffer(gl, vertices) {
     return positionBuffer;
 }
 
+function loadTexture(gl, url, flipY=false, premultiply=false) {
+
+    let tex = {
+        id: gl.createTexture(),
+        data: null,
+        width: 1,
+        height: 1,
+        channels: 4,
+        format: gl.RGBA,
+        dataType: gl.UNSIGNED_BYTE,
+
+        bind(unit = 0) {
+            gl.activeTexture(gl.TEXTURE0 + unit);
+            gl.bindTexture(gl.TEXTURE_2D, this.id);
+            return this;
+        },
+        unbind(unit = 0) {
+            gl.activeTexture(gl.TEXTURE0 + unit);
+            gl.bindTexture(gl.TEXTURE_2D, null);
+            return this;
+        },
+    };
+    
+    gl.bindTexture(gl.TEXTURE_2D, tex.id);
+  
+    // Because images have to be download over the internet
+    // they might take a moment until they are ready.
+    // Until then put a single pixel in the texture so we can
+    // use it immediately. When the image has finished downloading
+    // we'll update the texture with the contents of the image.
+    gl.texImage2D(gl.TEXTURE_2D, 0, tex.format, tex.width, tex.height, 0, tex.format, tex.dataType, new Uint8Array([0, 0, 0, 255]));
+  
+    const image = new Image();
+    image.onload = function() {
+        gl.bindTexture(gl.TEXTURE_2D, tex.id);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flipY);
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, premultiply);
+        gl.texImage2D(gl.TEXTURE_2D, 0, tex.format, tex.format, tex.dataType, image);
+
+        // WebGL1 has different requirements for power of 2 images
+        // vs non power of 2 images so check if the image is a
+        // power of 2 in both dimensions.
+        if (isPowerOf2(tex.width) && isPowerOf2(tex.height)) {
+            // Yes, it's a power of 2. Generate mips.
+            gl.generateMipmap(gl.TEXTURE_2D);
+        } else {
+            // No, it's not a power of 2. Turn of mips and set
+            // wrapping to clamp to edge
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        }
+    };
+    image.src = url;
+  
+    return tex;
+}
+
 function createPixelTexture(gl, width, height, floatingpoint=false) {
 
     floatingpoint =  floatingpoint && (!!gl.getExtension("EXT_color_buffer_float"));
@@ -96,6 +154,51 @@ function createPixelTexture(gl, width, height, floatingpoint=false) {
         format: gl.RGBA,
         dataType: floatingpoint ? gl.FLOAT : gl.UNSIGNED_BYTE,  // type of data we are supplying,
         
+        load(url) {
+            if (!this.data) this.allocate();
+
+            let self = this;
+            const img = new Image();   // Create new img element
+            const canvas = new OffscreenCanvas(this.width, this.height);
+            img.onload = function() {
+
+                // TODO: assert width/height match?
+                let ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0);
+                let imgdata = ctx.getImageData(0, 0, self.width, self.height);
+                let binary = new Uint8ClampedArray(imgdata.data.buffer);
+                let length = imgdata.data.length;
+                for (let i=0; i<length; i++) {
+                    self.data[i*4+0] = (binary[i*4+0] / 255);
+                    self.data[i*4+1] = (binary[i*4+1] / 255);
+                    self.data[i*4+2] = (binary[i*4+2] / 255);
+                    self.data[i*4+3] = (binary[i*4+3] / 255);
+                }
+                self.bind().submit();
+                // self.width = this.width;
+                // self.height = this.height;
+                // self.canvas.width = self.width;
+                // self.canvas.height = self.height;
+                // let length = self.width * self.height;
+                // let ctx = self.canvas.getContext("2d");
+                // ctx.drawImage(img, 0, 0);
+                // self.imgdata = ctx.getImageData(0, 0, self.width, self.height);
+                // let binary = new Uint8ClampedArray(self.imgdata.data.buffer);
+                // let data = new Float32Array(length*4);
+                // for (let i=0; i<length; i++) {
+                //     data[i*4+0] = (binary[i*4+0] / 255);
+                //     data[i*4+1] = (binary[i*4+1] / 255);
+                //     data[i*4+2] = (binary[i*4+2] / 255);
+                //     data[i*4+3] = (binary[i*4+3] / 255);
+                // }
+                // self.data = data;
+
+                // if (callback) callback.apply(self);
+            }
+            img.src = url; // Set source path
+            return this;
+        },
+
         // allocate local data
         allocate() {
             if (!this.data) {
@@ -116,6 +219,7 @@ function createPixelTexture(gl, width, height, floatingpoint=false) {
             let border = 0;                 // must be 0
             gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat, this.width, this.height, border, this.format, this.dataType, this.data);
             //gl.generateMipmap(gl.TEXTURE_2D);
+            return this;
         },
         
         bind(unit = 0) {
@@ -128,9 +232,35 @@ function createPixelTexture(gl, width, height, floatingpoint=false) {
             gl.bindTexture(gl.TEXTURE_2D, null);
             return this;
         },
+
+        read(x, y) {
+            if (!this.data) return 0;
+    
+            let idx = 4*(Math.floor(x) + Math.floor(y) * this.width);
+            return this.data[idx+1];
+        },
+    
+        readInto(x, y, v) {
+            if (this.data) {
+                let idx = 4*(Math.floor(x) + Math.floor(y) * this.width);
+                v[0] = this.data[idx];
+                v[1] = this.data[idx+1];
+                v[2] = this.data[idx+2];
+                v[3] = this.data[idx+3];
+            }
+            return v;
+        },
+    
+        readDot(x, y, xyz) {
+            if (!this.data) return 0;
+            let idx = 4*(Math.floor(x) + Math.floor(y) * this.width);
+            return this.data[idx] * xyz[0]
+                 + this.data[idx+1] * xyz[1]
+                 + this.data[idx+2] * xyz[2];
+        },
     };
 
-    tex.bind().submit();
+    tex.allocate().bind().submit();
 
     // unless we get `OES_texture_float_linear` we can not filter floating point
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);

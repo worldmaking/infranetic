@@ -4,6 +4,10 @@ function pick(array) {
     return array[Math.floor(Math.random() * array.length)];
 }
 
+function isPowerOf2(value) {
+  	return (value & (value - 1)) == 0;
+}
+
 // add a message to the overlay <div> element on the page:
 function print(...args) {
     const el = document.createElement("pre");
@@ -66,7 +70,7 @@ class FPS {
 
 // loads an image and turns it into a typedarray and offscreen canvas
 class ArrayFromImg {
-	constructor(path) {
+	constructor(path, callback) {
 		let self = this;
 		let img = new Image();   // Create new img element
 		this.canvas = new OffscreenCanvas(64, 64);
@@ -88,8 +92,17 @@ class ArrayFromImg {
 				data[i*4+3] = (binary[i*4+3] / 255);
 			}
 			self.data = data;
+
+			if (callback) callback.apply(self);
 		}
 		img.src = path; // Set source path
+	}
+
+	setA(x, y, a) {
+		if (!this.data) return 0;
+
+		let idx = 4*(Math.floor(x) + Math.floor(y) * this.width);
+		this.data[idx+3] = a;
 	}
 
 	read(x, y) {

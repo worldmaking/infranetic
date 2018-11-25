@@ -4,33 +4,58 @@ class Agent {
 
     constructor(id, world) {
         this.id = id;
-        this.network = neato.createNetwork();
+        this.pos = vec2.create();
+        this.fwd = vec2.create();
+        this.side = vec2.create();
+        this.scent = vec3.create();
+
         this.reset();
     }
 
     reset() {
-        this.pos = vec2.fromValues(
+        this.network = neato.createNetwork();
+        this.near = [];
+
+        vec2.set(this.pos,
             (Math.random() * world.size[0]),
             (Math.random() * world.size[1]),
         );
-        this.fwd = vec2.create();
         vec2.random(this.fwd, 1);
-        this.side = vec2.fromValues(this.fwd[1], -this.fwd[0]);
-        this.dir = Math.atan2(this.fwd[1], this.fwd[0]);
+        vec2.set(this.side, this.fwd[1], -this.fwd[0]);
+        vec3.set(this.scent, 0.5, 0.5, 0.5 );
 
-        this.scent = vec3.fromValues( 0.5, 0.5, 0.5 );
+        this.dir = Math.atan2(this.fwd[1], this.fwd[0]);
         this.phase = Math.random();
         this.dphase = 0;
         this.rate = 1;
         this.active = Math.random();
-
+        this.reward = 0.5;
         this.size = 1;
-        this.speed = 2 * world.pixels_per_meter; // pixels per frame
-
-        this.near = [];
+        this.speed = 4 * world.pixels_per_meter; // pixels per frame
     }
 
-    update(world) {     
+    copy(other) {
+        this.network = neato.copyNetwork(other.network);
+        this.near = [];
+
+        vec2.copy(this.pos, other.pos);
+        vec2.copy(this.fwd, other.fwd);
+        vec2.copy(this.side, other.side);
+        vec3.copy(this.scent, other.scent);
+        this.dir = other.dir;
+        this.phase = Math.random();
+        this.dphase = 0;
+        this.rate = other.rate;
+        this.active = 1;
+        this.reward = 0.5;
+        this.size = other.size;
+        this.speed = other.speed; // pixels per frame    
+    }
+
+    update(world, agents) {    
+        
+        let widx = world.idx(this.pos);
+
 
         // sensing:
         let s1 = vec2.create();
@@ -46,6 +71,24 @@ class Agent {
 
         let data = [0, 0, 0, 0]
         let g0 = world.data.readInto(this.pos[0], this.pos[1], data);
+        
+        let wayfound = g0[0];
+        let areafound = g0[2];
+        let altitude = g0[1];
+        let marked = g0[3];
+
+        // mark our passage:
+        //world.data.data[widx*4 + 3] = 0;
+
+
+        // simple reward for staying on the roads for now:
+        this.reward = Math.max(this.reward * 0.99, wayfound * marked);
+        if (this.reward < 0.1) {
+            this.copy(pick(agents));
+            return;
+        }
+
+        let outputs = this.network.activate([g2-g1, g2+g1]);
 
         let color = [0, 0, 0, 0];
         world.ways.readInto(s1[0], s1[1], color);
@@ -70,6 +113,12 @@ class Agent {
         this.dir += turn * Math.random();
 
         vec2.set(this.fwd, Math.cos(this.dir), Math.sin(this.dir))
+
+        if (1) {
+            this.scent[0] = this.reward;
+            this.scent[1] = 0.5; //outputs[0];
+            this.scent[2] = 1 - this.scent[0]; //outputs[1];
+        }
 
         let entrainment = 0.5;
         let deviation = 0.0000;
@@ -97,7 +146,12 @@ class Agent {
             for (let n of this.near) {
                 if (n == this) continue;
 
-                
+                if (Math.random() < 0.1*(n.reward - this.reward)) {
+                    // copy the network:
+                    this.network = neato.copyNetwork(n.network)
+                    if (Math.random() < 0.01) neato.mutateOnce(this.network);
+                    this.reward = n.reward;
+                }
 
                 // get activation difference:
                 let ad = n.active - this.active;
@@ -170,8 +224,6 @@ class Agent {
         }
 
         vec2.set(this.side, this.fwd[1], -this.fwd[0]);
-
-        let outputs = this.network.activate([g1, g2]);
     }
 
     move(world, t) {
