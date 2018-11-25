@@ -561,6 +561,13 @@ function update() {
 	ctx.fillStyle = "black";
 	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
+	let smooth = true;
+	ctx.mozImageSmoothingEnabled = smooth;
+	ctx.webkitImageSmoothingEnabled = smooth;
+	ctx.imageSmoothingQuality = "high";
+	ctx.msImageSmoothingEnabled = smooth;
+	ctx.imageSmoothingEnabled = smooth;
+
 	let zoom = 16;
 	let w = gl.canvas.width/zoom;
 	let xcount = canvas.width / w;
@@ -578,6 +585,9 @@ function update() {
 				a.pos[0]-glw/2, a.pos[1]-glw/2, glw, glw,
 				w*x+w/4, w*y+w/4, w/2, w/2);
 			ctx.fillText(a.birthdate, w*x+w/4 + w/4, w*y+w/4 + w/2);
+			
+			let loc = `${Math.floor(a.pos[0])} ${Math.floor(a.pos[1])}`;
+			ctx.fillText(loc, w*x+w/4 + w/4, w*y+w/4 + w/2 + 10);
 		}
 	}
 	

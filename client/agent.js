@@ -15,8 +15,6 @@ class Agent {
     reset() {
         this.network = neato.createNetwork();
         this.near = [];
-        let date = new Date();
-        this.birthdate = date.toISOString();
 
         vec2.set(this.pos,
             (Math.random() * world.size[0]),
@@ -34,6 +32,9 @@ class Agent {
         this.reward = 0.5;
         this.size = 1;
         this.speed = 4 * world.pixels_per_meter; // pixels per frame
+
+        
+        this.birthdate = new Date().toISOString().replace(/[-:.TZ]/g, " ");
     }
 
     copy(other) {

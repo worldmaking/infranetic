@@ -107,5 +107,5 @@ function handlemessage(msg, session) {
 }
 
 server.listen(8080, function() {
-	console.log('server listening on %d', server.address().port);
+	console.log(`server listening on http://localhost:${server.address().port}`, );
 });
