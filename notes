@@ -1,4 +1,9 @@
 
+add border & fix stretch on main view
+
+----
+
+
 I made agents 'die' if their reward is < 0.1, 
 and be reborn by copying another agent somewhere
 
