@@ -23,6 +23,8 @@
             this.side = vec2.create();
             this.scent = vec3.create();
 
+            this.meta = {};
+
             this.reset(world);
         }
 
@@ -63,7 +65,7 @@
             this.active = Math.random();
             this.reward = 0.5;
 
-            this.birthdate = new Date().toISOString().replace(/[-:.TZ]/g, "").substring(4);
+            this.meta.birthdate = new Date().toISOString().replace(/[-:.TZ]/g, "").substring(4);
         }
 
         update(world, agents) {    

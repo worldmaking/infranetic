@@ -87,7 +87,7 @@ class ArrayFromImg {
 
 ////////////////////////
 
-const NUM_AGENTS = 5000;
+const NUM_AGENTS = 3000;
 const MAX_NEIGHBOURS = 4;
 const MAX_LINE_POINTS = NUM_AGENTS*MAX_NEIGHBOURS;
 
@@ -108,6 +108,7 @@ const world = {
 
 	
 	agents_near: [],
+	agents_meta: [],
 };
 world.aspect = world.meters[0]/world.meters[1];
 world.size[0] = Math.floor(world.size[1] * world.aspect);
@@ -198,7 +199,6 @@ function update() {
 			}
 			a.update(world, agents);
 
-
 			let sidx = a.id * audioChannels;
 			audiostate[sidx+0] = a.pos[0] / world.size[0];
 			audiostate[sidx+1] = a.pos[1] / world.size[1];
@@ -229,6 +229,7 @@ function update() {
 for (let i=0; i<NUM_AGENTS; i++) {
 	let a = new Agent(i, world);
 	world.agents_near[i] = [];
+	world.agents_meta[i] = a.meta;
 	agents.push(a);
 	space.insertPoint(a);
 }
@@ -319,9 +320,9 @@ wss.on('connection', function(ws, req) {
 function handlemessage(msg, session) {
 	switch (msg.cmd) {
 		case "getagents": {
-			let data = JSON.stringify(agents);
+			let data = JSON.stringify(world.agents_meta);
 			//console.log(data)
-			session.send("hi")
+			session.send(data)
 		} break;
 		default: console.log("received JSON", msg, typeof msg);
 	}

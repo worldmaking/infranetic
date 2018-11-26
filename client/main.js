@@ -38,7 +38,7 @@ world.meters_per_pixel = world.meters[1] / world.size[1];
 world.pixels_per_meter = 1/world.meters_per_pixel;
 world.norm = [1/world.size[0], 1/world.size[1]];
 
-const NUM_AGENTS = 5000;
+const NUM_AGENTS = 3000;
 const MAX_NEIGHBOURS = 4;
 const MAX_LINE_POINTS = NUM_AGENTS*MAX_NEIGHBOURS;
 let agents = [];

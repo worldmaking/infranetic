@@ -45,7 +45,7 @@ world.pixels_per_meter = 1/world.meters_per_pixel;
 world.norm = [1/world.size[0], 1/world.size[1]];
 
 
-const NUM_AGENTS = 5000;
+const NUM_AGENTS = 3000;
 const MAX_NEIGHBOURS = 4;
 const MAX_LINE_POINTS = NUM_AGENTS*MAX_NEIGHBOURS;
 let agents = [];
@@ -529,10 +529,14 @@ function update() {
 			ctx.drawImage(gl.canvas, 
 				ax-glw/2, ay-glw/2, glw, glw,
 				px, py, mapbox, mapbox);
-			ctx.fillText(id,  px, py+mapbox + fontsize*0);
-			
-			let loc = `${Math.floor(ax)} ${Math.floor(ay)}`;
-			ctx.fillText(loc, px, py+mapbox + fontsize*1);
+
+			let a = agents[id];
+			if (a) {
+				ctx.fillText(a.birthdate,  px, py+mapbox + fontsize*0);
+				
+				let loc = `${Math.floor(ax)} ${Math.floor(ay)}`;
+				ctx.fillText(loc, px, py+mapbox + fontsize*1);
+			}
 		}
 	}
 
@@ -596,7 +600,9 @@ try {
 				
 			},
 			onmessage: function(msg) { 
-				print("received", msg);
+				agents = msg;
+				//console.log("received agents", agents.length)
+				//console.log(agents[0])
 			},
 			onbuffer(data, byteLength) {
 				//console.log("received arraybuffer of " + byteLength + " bytes");
