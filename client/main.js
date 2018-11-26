@@ -44,11 +44,6 @@ const NUM_AGENTS = 5000;
 const MAX_NEIGHBOURS = 4;
 const MAX_LINE_POINTS = NUM_AGENTS*MAX_NEIGHBOURS;
 let agents = [];
-let space = new SpaceHash({
-	width: world.size[0],
-	height: world.size[1],
-	cellSize: 25
-});
 
 let fps = new utils.FPS();
 let running = true;
@@ -125,7 +120,10 @@ uniform vec4 u_color;
 in vec2 v_texCoord;
 out vec4 outColor;
 void main() {
-	outColor = texture(u_image, v_texCoord).rgba * u_color;
+	outColor = texture(u_image, v_texCoord).rgba;
+	float avg = (outColor.r + outColor.g + outColor.b) / 3.;
+	outColor.rgb = mix(outColor.rgb, vec3(avg), 0.1);
+	outColor *= u_color.a;
 }
 `)
 gl.useProgram(program_showtex);
@@ -158,8 +156,9 @@ void main() {
 	
 	vec4 image1 = texture(u_image, uv+vec2(onePixel.x, 0.));
 	vec4 image2 = texture(u_image, uv+vec2(0., onePixel.y));
+	vec4 image3 = texture(u_image, uv+vec2(onePixel.x, onePixel.y));
 
-	image = (image + image1 + image2) / 3.;
+	image = (image + image1 + image2 + image3) / 4.;
 
 	outColor = image;// * u_color;
 	//outColor.rgb += vec3(ways) * 0.15;
@@ -297,7 +296,7 @@ void main() {
 	outColor = color; //vec4(0, 0.5, 1, 1);
 	outColor.rgb *= outColor.a;
 	vec3 c = color.rgb;
-	float a = 0.3 + color.a*color.a*0.7;
+	float a = 0.3 + color.a*color.a;
 	outColor = vec4(c * a, 1);
 }
 `);
@@ -399,8 +398,9 @@ precision mediump float;
 in vec4 color;
 out vec4 outColor;
 void main() {
-	vec3 c = mix(color.rgb, vec3(0.5), 0.1);
-	outColor = vec4(c, color.a * 0.);
+	vec3 c = mix(color.rgb, vec3(1.), 0.9);
+	outColor = vec4(c, color.a * 0.03);
+	//outColor = vec4(color.a * 0.5);
 }
 `);
 for (let i=0; i<linesVao.indices.length; i++) {
@@ -425,7 +425,7 @@ function update() {
 	
 	dirty = false;
 
-	let t = fps.t / audioLoopSeconds;
+	let t = fps.t;
 
 	if (running) {
 
@@ -445,8 +445,8 @@ function update() {
 			gl.bindTexture(gl.TEXTURE_2D, fbo.front.id);
 			//gl.bindTexture(gl.TEXTURE_2D, chan1.id);
 			gl.useProgram(program_showtex);
-			let a = 0.99; //0.995;
-			gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), a, a, a, 1);
+			let a = 0.9995; //0.995;
+			gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), a, a, a, a);
 			glQuad.bind().draw();
 
 			let viewmat = [
@@ -506,13 +506,14 @@ function update() {
 	ctx.fillStyle = "#555"
 	for (let y=0; y<ycount; y++) {
 		for (let x=0; x<xcount; x++, i++) {
-			let a = agents[i];
+			let ax = agentsVao.positions[i*2];
+			let ay = agentsVao.positions[i*2+1];
 			ctx.drawImage(gl.canvas, 
-				a.pos[0]-glw/2, a.pos[1]-glw/2, glw, glw,
+				ax-glw/2, ay-glw/2, glw, glw,
 				w*x+w/4, w*y+w/4, w/2, w/2);
-			ctx.fillText(a.birthdate, w*x+w/4, w*y+w/4 + w/2);
+			//ctx.fillText(a.birthdate, w*x+w/4, w*y+w/4 + w/2);
 			
-			let loc = `${Math.floor(a.pos[0])} ${Math.floor(a.pos[1])}`;
+			let loc = `${Math.floor(ax)} ${Math.floor(ay)}`;
 			ctx.fillText(loc, w*x+w/4, w*y+w/4 + w/2 + 10);
 		}
 	}
@@ -579,12 +580,6 @@ window.addEventListener("keyup", function(event) {
 
 agentsVao.create(gl, program_agents);
 
-for (let i=0; i<NUM_AGENTS; i++) {
-	let a = new Agent(i, world);
-	agents.push(a);
-	space.insertPoint(a);
-}
-
 let sock
 try {
 	if (window.location.hostname == "localhost") {
@@ -620,4 +615,3 @@ try {
 }
 resize();
 update();
-startAudio();

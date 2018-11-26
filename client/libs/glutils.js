@@ -142,7 +142,6 @@ function loadTexture(gl, url, flipY=false, premultiply=false) {
 function createPixelTexture(gl, width, height, floatingpoint=false) {
 
     floatingpoint =  floatingpoint && (!!gl.getExtension("EXT_color_buffer_float"));
-    console.log("texture floating?", floatingpoint);
     const channels = 4; // RGBA
 
     let tex = {
@@ -282,8 +281,6 @@ function createFBO(gl, width, height, floatingpoint=false) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, id);
     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, colorRenderbuffer);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-    console.log("FBO floating?", floatingpoint);
 
     let fbo = {
         id: id,
@@ -448,7 +445,6 @@ void main() {
         setuniforms(dict) {
             this.use();
             for (let k in dict) {
-                console.log(k, dict[k])
                 this.uniforms[k].set.apply(this, dict[k]);
             }
             return this;
