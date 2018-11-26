@@ -202,6 +202,12 @@ function update() {
 			let sidx = a.id * audioChannels;
 			audiostate[sidx+0] = a.pos[0] / world.size[0];
 			audiostate[sidx+1] = a.pos[1] / world.size[1];
+			audiostate[sidx+2] = a.active;
+			audiostate[sidx+3] = a.reward;
+			audiostate[sidx+4] = a.scent[0];
+			audiostate[sidx+5] = a.scent[1];
+			audiostate[sidx+6] = a.scent[2];
+			audiostate[sidx+7] = a.rate;
 		}
 		//linesVao.count = Math.min(MAX_LINE_POINTS, linecount);
 	}

@@ -120,7 +120,7 @@
             }
 
             let dev = vec3.random(vec3.create(), 0.05)
-            vec2.add(this.scent, this.scent, dev);
+            vec3.add(this.scent, this.scent, dev);
             this.scent[0] = (this.scent[0] > 1) ? 1 : (this.scent[0] < 0) ? 0 : this.scent[0];
             this.scent[1] = (this.scent[1] > 1) ? 1 : (this.scent[1] < 0) ? 0 : this.scent[1];
             this.scent[2] = (this.scent[2] > 1) ? 1 : (this.scent[2] < 0) ? 0 : this.scent[2];
@@ -193,25 +193,12 @@
                         }
                     }
 
-
-
-
-
-
-
-
-
-
-
-
                     adavg += ad;
                     // only listen to louder voices:
                     if (ad > 0) {
                         vec3.lerp(this.scent, this.scent, n.scent, 0.1);
                         
                     }
-
-
                     
                     // get phase difference:
                     let pd = (n.phase - this.phase);
