@@ -302,7 +302,7 @@ void main() {
 }
 `);
 gl.useProgram(program_agents);
-gl.uniform1f(gl.getUniformLocation(program_agents, "u_pointsize"), 2);
+gl.uniform1f(gl.getUniformLocation(program_agents, "u_pointsize"), 1);
 
 let linesVao = {
 	id: gl.createVertexArray(),
