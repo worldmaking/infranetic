@@ -47,7 +47,7 @@ world.norm = [1/world.size[0], 1/world.size[1]];
 
 const NUM_AGENTS = 3000;
 const MAX_NEIGHBOURS = 4;
-const MAX_LINE_POINTS = NUM_AGENTS*MAX_NEIGHBOURS;
+const MAX_LINE_POINTS = NUM_AGENTS;
 let agents = [];
 
 
@@ -325,7 +325,7 @@ let linesVao = {
 
 	indices: new Uint16Array(MAX_LINE_POINTS),
 	indexBuffer: gl.createBuffer(),
-	count: 0,
+	count: MAX_LINE_POINTS,
 
 
 	submit() {
@@ -412,9 +412,8 @@ precision mediump float;
 in vec4 color;
 out vec4 outColor;
 void main() {
-	vec3 c = mix(color.rgb, vec3(1.), 0.9);
-	outColor = vec4(c, color.a * 0.03);
-	//outColor = vec4(color.a * 0.5);
+	vec3 c = mix(color.rgb, vec3(1.), 0.05);
+	outColor = vec4(c, color.a * 0.1);
 }
 `);
 for (let i=0; i<linesVao.indices.length; i++) {
@@ -443,8 +442,6 @@ function update() {
 
 	if (running) {
 
-		linesVao.count = MAX_LINE_POINTS;
-		
 		fbo.begin().clear();
 		{
 			gl.lineWidth(0.1);
@@ -508,12 +505,6 @@ function update() {
 	ctx.msImageSmoothingEnabled = smooth;
 	ctx.imageSmoothingEnabled = smooth;
 
-	// let zoom = 16;
-	// let w = gl.canvas.width/zoom;
-	// let xcount = Math.floor(canvas.width / w);
-	// let ycount = Math.floor(canvas.height / w);
-	// let glw = w/2;
-
 	let mapbox = Math.floor(grid.colsize*3/4);
 	
 	let fontsize = 12;
@@ -535,8 +526,8 @@ function update() {
 			if (a) {
 
 				if (a.reward < 0.15) continue;
-				
-				if (cell.zoom <= 0.0) {
+
+				if (cell.zoom <= 0.1) {
 					cell.id = Math.floor(Math.random()*NUM_AGENTS);
 					cell.zoom = 2;
 				} 
@@ -560,15 +551,11 @@ function update() {
 				ctx.drawImage(gl.canvas, 
 					ax-glw, ay-glw, glw2, glw2,
 					px, py, mapbox, mapbox);
-
 			
-				ctx.fillText(a.birthdate,  px, py+mapbox + fontsize*0);
+				ctx.fillText(a.birthdata,  px, py+mapbox + fontsize*0);
 				
-				let loc = `${Math.floor(ax)} ${Math.floor(ay)}`;
-				ctx.fillText(loc, px, py+mapbox + fontsize*1);
-				
-				let stats = `${a.reward.toFixed(3)}`;
-				ctx.fillText(stats, px, py+mapbox + fontsize*2);
+				let stats = `${Math.floor(ax)} ${Math.floor(ay)} ${a.reward.toFixed(3)}`;
+				ctx.fillText(stats, px, py+mapbox + fontsize*1);
 			}
 
 		}

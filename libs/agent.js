@@ -23,7 +23,9 @@
             this.side = vec2.create();
             this.scent = vec3.create();
 
-            this.meta = {};
+            this.meta = {
+                reward: 0
+            };
 
             this.reset(world);
         }
@@ -38,7 +40,7 @@
             this.size = 1;
             this.speed = 4 * world.pixels_per_meter; // pixels per frame
 
-            this.reset_generic();
+            this.reset_generic(world);
             this.network = neato.createNetwork();
         }
 
@@ -52,11 +54,11 @@
             this.size = other.size;
             this.speed = other.speed; // pixels per frame  
 
-            this.reset_generic();  
+            this.reset_generic(world);  
             this.network = neato.copyNetwork(other.network);
         }
 
-        reset_generic() {
+        reset_generic(world) {
             vec2.set(this.side, this.fwd[1], -this.fwd[0]);
             this.dir = Math.atan2(this.fwd[1], this.fwd[0]);
 
@@ -65,7 +67,18 @@
             this.active = Math.random();
             this.meta.reward = 0.5;
 
-            this.meta.birthdate = new Date().toISOString().replace(/[-:.TZ]/g, "").substring(4);
+            this.meta.birthdata = new Date().toISOString().replace(/[-:.TZ]/g, "").substring(4);
+            let color = [0, 0, 0, 0];
+            world.areas.readInto(this.pos[0], this.pos[1], color);
+            if (color[1] > 0.1) this.meta.birthdata += "G";
+            if (color[0] > 0.1) this.meta.birthdata += "H";
+            if (color[2] > 0.1) this.meta.birthdata += "I";
+            world.data.readInto(this.pos[0], this.pos[1], color);
+            if (color[1] > 0.1) this.meta.birthdata += "A";
+            world.ways.readInto(this.pos[0], this.pos[1], color);
+            if (color[1] > 0.1) this.meta.birthdata += "W";
+            if (this.meta.birthdata.length == 0) this.meta.birthdata = "Z";
+
         }
 
         update(world, agents) {    
@@ -94,17 +107,21 @@
             let altitude = g0[1];
             let marked = g0[3];
 
+           
+
             // mark our passage:
             //world.data.data[widx*4 + 3] = 0;
 
 
             // simple meta.reward for staying on the roads for now:
             this.meta.reward = Math.max(this.meta.reward * 0.99, wayfound * marked);
+
             if (this.meta.reward < 0.1) {
                 //this.reset_copy(utils.pick(agents));
                 this.reset(world);
                 return;
             }
+            
 
             let outputs = this.network.activate([g2-g1, g2+g1]);
 

@@ -12,14 +12,13 @@ const WebSocket = require('ws');
 const PNG = require("pngjs").PNG;
 const { vec2, vec3 } = require("gl-matrix");
 
-
 const mmapfile = require('mmapfile');
 
-const neataptic = require("./client/libs/neataptic.js");
-const utils = require("./client/libs/utils.js");
-const SpaceHash = require("./client/libs/spacehash.js");
-const neato = require("./client/libs/neato.js");
-const Agent = require("./client/libs/agent.js");
+const utils = require("./libs/utils.js");
+const neataptic = require("./libs/neataptic.js");
+const SpaceHash = require("./libs/spacehash.js");
+const neato = require("./libs/neato.js");
+const Agent = require("./libs/agent.js");
 
 const project_path = process.cwd();
 const server_path = __dirname;
@@ -89,7 +88,8 @@ class ArrayFromImg {
 
 const NUM_AGENTS = 3000;
 const MAX_NEIGHBOURS = 4;
-const MAX_LINE_POINTS = NUM_AGENTS*MAX_NEIGHBOURS;
+const MAX_LINE_POINTS = NUM_AGENTS;//*MAX_NEIGHBOURS;
+let lineidx = 0;
 
 const world = {
 	meters: [34976, 23376], // meters
@@ -170,7 +170,6 @@ function update() {
 		let positions = agent_positions;
 		let colors = agent_colors;
 		let lines = agent_lines;
-		let linecount = 0;
 
 		for (let i=0; i<agents.length; i++) {
 			let a = agents[i];
@@ -191,11 +190,10 @@ function update() {
 			let search_radius = 25;
 			let near = world.agents_near[a.id];
 			space.searchUnique(a, search_radius, MAX_NEIGHBOURS, near);
-			if (linecount < MAX_LINE_POINTS) {
-				for (let n of near) {
-					lines[linecount++] = a.id;
-					lines[linecount++] = n.id;
-				}
+			for (let n of near) {
+				lines[lineidx++] = a.id;
+				lines[lineidx++] = n.id;
+				if (lineidx >= MAX_LINE_POINTS) lineidx = 0;
 			}
 			a.update(world, agents);
 
@@ -203,13 +201,12 @@ function update() {
 			audiostate[sidx+0] = a.pos[0] / world.size[0];
 			audiostate[sidx+1] = a.pos[1] / world.size[1];
 			audiostate[sidx+2] = a.active;
-			audiostate[sidx+3] = a.reward;
+			audiostate[sidx+3] = a.meta.reward;
 			audiostate[sidx+4] = a.scent[0];
 			audiostate[sidx+5] = a.scent[1];
 			audiostate[sidx+6] = a.scent[2];
 			audiostate[sidx+7] = a.rate;
 		}
-		//linesVao.count = Math.min(MAX_LINE_POINTS, linecount);
 	}
 
 	fps.tick();
