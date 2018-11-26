@@ -48,8 +48,7 @@ let agents = [];
 let fps = new utils.FPS();
 let running = true;
 
-let showmap = false;
-let showgrid = false;
+let showlines = true;
 
 canvas.width = world.size[0];
 canvas.height = world.size[1]; 
@@ -283,7 +282,7 @@ uniform mat3 u_matrix;
 uniform float u_pointsize;
 void main() {
 	gl_Position = vec4((u_matrix * vec3(a_position.xy, 1)).xy, 0, 1);
-	float a = 0.3 + a_color.a*0.7;
+	float a = 0.3 + a_color.a*a_color.a*0.7;
 	gl_PointSize = u_pointsize * a;
 	color = a_color;
 }
@@ -301,7 +300,7 @@ void main() {
 }
 `);
 gl.useProgram(program_agents);
-gl.uniform1f(gl.getUniformLocation(program_agents, "u_pointsize"), 2);
+gl.uniform1f(gl.getUniformLocation(program_agents, "u_pointsize"), 3);
 
 let linesVao = {
 	id: gl.createVertexArray(),
@@ -458,10 +457,11 @@ function update() {
 			gl.uniformMatrix3fv(gl.getUniformLocation(program_agents, "u_matrix"), false, viewmat);
 			agentsVao.bind().submit(agentsVao.positions).draw();
 
-			
-			gl.useProgram(program_lines);
-			gl.uniformMatrix3fv(gl.getUniformLocation(program_lines, "u_matrix"), false, viewmat);
-			linesVao.bind().submit().draw();
+			if (showlines) {
+				gl.useProgram(program_lines);
+				gl.uniformMatrix3fv(gl.getUniformLocation(program_lines, "u_matrix"), false, viewmat);
+				linesVao.bind().submit().draw();
+			}
 
 			
 		}
@@ -563,6 +563,8 @@ window.addEventListener("keyup", function(event) {
 		refocus();
 	} else if (event.key == "m") {
 		agents.sort((a, b) => b.reward - a.reward);
+	} else if (event.key == "l") {
+		showlines = !showlines;
 	} else if (event.key == "i") {
 		slab_composite_invert = (slab_composite_invert) ? 0 : 1;
 	} else if (event.key == "s") {
