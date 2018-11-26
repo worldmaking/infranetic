@@ -527,7 +527,7 @@ function update() {
 
 				if (a.reward < 0.15) continue;
 
-				if (cell.zoom <= 0.1) {
+				if (cell.zoom <= 0.05) {
 					cell.id = Math.floor(Math.random()*NUM_AGENTS);
 					cell.zoom = 2;
 				} 

@@ -115,7 +115,7 @@ void main() {
 	vec4 tex0 = texture(u_tex0, v_texCoord).rgba;
 	outColor = vec4(tex0.rgb, 1.);
 	float avg = (outColor.r + outColor.g + outColor.b) * 0.333;
-	outColor.rgb = mix(outColor.rgb, vec3(avg), 0.1);
+	outColor.rgb = mix(outColor.rgb, vec3(avg), 0.001);
 	outColor.rgb *= u_color.a;
 }
 `)
@@ -310,7 +310,7 @@ void main() {
 }
 `);
 gl.useProgram(program_agents);
-gl.uniform1f(gl.getUniformLocation(program_agents, "u_pointsize"), 3);
+gl.uniform1f(gl.getUniformLocation(program_agents, "u_pointsize"), 1);
 
 let linesVao = {
 	id: gl.createVertexArray(),
@@ -450,7 +450,7 @@ function update() {
 			gl.useProgram(program_showtex);
 			world.bg.bind(1);
 			fbo.front.bind(0);
-			let a = 0.99; //0.995;
+			let a = 0.993; //0.995;
 			gl.uniform1i(gl.getUniformLocation(program_showtex, "u_tex0"), 0);
 			gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), showmap ? 1 : 0, a, a, a);
 			glQuad.bind().draw();
