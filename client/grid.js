@@ -143,7 +143,7 @@ gl.useProgram(program_showtex);
 gl.uniform1i(gl.getUniformLocation(program_showtex, "u_image"), 0);
 gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), 1, 1, 1, 0.02);
 
-let slab_composite_invert = 0;
+let slab_composite_invert = 1;
 let slab_composite = createSlab(gl, `#version 300 es
 precision highp float;
 uniform sampler2D u_image;
