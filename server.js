@@ -12,6 +12,9 @@ const WebSocket = require('ws');
 const PNG = require("pngjs").PNG;
 const { vec2, vec3 } = require("gl-matrix");
 
+
+const mmapfile = require('mmapfile');
+
 const neataptic = require("./client/libs/neataptic.js");
 const utils = require("./client/libs/utils.js");
 const SpaceHash = require("./client/libs/spacehash.js");
@@ -24,6 +27,8 @@ const client_path = path.join(server_path, "client");
 console.log("project_path", project_path);
 console.log("server_path", server_path);
 console.log("client_path", client_path);
+
+
 
 
 // loads an image and turns it into a typedarray and offscreen canvas
@@ -136,11 +141,18 @@ world.agents = agents;
 let fps = new utils.FPS();
 let running = true;
 let audioLoopSeconds = 2;
+let audioChannels = 8;
 
+// open a file for read/write & map to a Buffer
+let buf = mmapfile.openSync("audio/audiostate.bin", audioChannels*NUM_AGENTS*floatBytes, "r+");	
+let audiostate = new Float32Array(buf.buffer);
+console.log("audiostate.byteLength", audiostate.byteLength); // 8
+// console.log(buf.toString('ascii')); // "--------"
+// // write to it:
+// buf.fill('-');
+// console.log(buf.toString('ascii')); // "--------"
 
 function update() {
-	//requestAnimationFrame(update);
-	setTimeout(update, 1000/60);
 
 	let t = fps.t / audioLoopSeconds;
 
@@ -185,6 +197,11 @@ function update() {
 				}
 			}
 			a.update(world, agents);
+
+
+			let sidx = a.id * audioChannels;
+			audiostate[sidx+0] = a.pos[0] / world.size[0];
+			audiostate[sidx+1] = a.pos[1] / world.size[1];
 		}
 		//linesVao.count = Math.min(MAX_LINE_POINTS, linecount);
 	}
@@ -199,6 +216,8 @@ function update() {
 
 	//console.log(agentsBuffer.byteLength, utils.pick(agent_lines));
 	send_all_clients(agentsBuffer);
+
+	setTimeout(update, 1000/60);
 }
 
 for (let i=0; i<NUM_AGENTS; i++) {
