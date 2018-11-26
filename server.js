@@ -102,7 +102,7 @@ const world = {
 	// coordinates of the ACC in this space
 	acc: [2382, 1162],
 
-	ways: new ArrayFromImg(path.join(client_path, "img", 'ways2.png')),
+	ways: new ArrayFromImg(path.join(client_path, "img", 'ways3.png')),
 	areas: new ArrayFromImg(path.join(client_path, "img", 'areas.png')),
 	data: new ArrayFromImg(path.join(client_path, "img", 'data.png')),
 

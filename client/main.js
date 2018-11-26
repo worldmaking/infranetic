@@ -25,8 +25,8 @@ const world = {
 	// coordinates of the ACC in this space
 	acc: [2382, 1162],
 
-	ways: new ArrayFromImg('img/ways2.png'),
-	areas: new ArrayFromImg('img/areas.png'),
+	//ways: new ArrayFromImg('img/ways2.png'),
+	//areas: new ArrayFromImg('img/areas.png'),
 
 	idx(pos) {
 		return Math.floor(pos[1])*this.size[0] + Math.floor(pos[0]);
@@ -55,9 +55,10 @@ gl.canvas.width = world.size[0];
 gl.canvas.height = world.size[1];
 
 world.data = createPixelTexture(gl, world.size[0], world.size[1], true).load("img/data.png");
+world.areas = createPixelTexture(gl, world.size[0], world.size[1], true).load("img/areas.png");
+world.ways = createPixelTexture(gl, world.size[0], world.size[1], true).load("img/ways3.png");
 
-world.bg = //createPixelTexture(gl, world.size[0], world.size[1], true).load("img/gwangju.png");
-loadTexture(gl, "img/gwangju.png", true);
+world.bg = loadTexture(gl, "img/gwangju.png", true);
 // let dataTex = createPixelTexture(gl, world.size[0], world.size[1]).allocate(); //loadTexture(gl, 'img/data.png', true);
 // world.data = new ArrayFromImg('img/data.png', function() {
 // 	// console.log(this);
@@ -128,6 +129,7 @@ precision highp float;
 uniform sampler2D u_image;
 uniform sampler2D u_data;
 uniform sampler2D u_map;
+uniform sampler2D u_areas;
 uniform vec4 u_color;
 uniform float u_invert;
 uniform float u_showmap;
@@ -146,6 +148,8 @@ void main() {
 	float altitude = data.g;
 	float areas = data.b;
 	float marks = data.a;
+
+	vec4 areacolors = texture(u_areas, uv1);
 
 	vec2 texSize = vec2(3231, 2160);
 	vec2 onePixel = vec2(1.0, 1.0) / texSize;
@@ -166,15 +170,19 @@ void main() {
 	outColor += texture(u_map, uv) * u_showmap;
 
 	float gamma = 1.5;
-    outColor.rgb = pow(outColor.rgb, vec3(1.0/gamma));
+	outColor.rgb = pow(outColor.rgb, vec3(1.0/gamma));
+	
+	outColor.rgb *= areacolors.a;
 
 	outColor.rgb = mix(outColor.rgb, 1.-outColor.rgb, u_invert);
+
 
 }
 `,{
 	"u_image": [0],
 	"u_data": [1],
 	"u_map": [2],
+	"u_areas": [3],
 	"u_color": [1, 1, 1, 1],
 	"u_invert": [slab_composite_invert],
 	"u_showmap": [showmap ? 1 : 0],
@@ -442,7 +450,7 @@ function update() {
 			gl.useProgram(program_showtex);
 			world.bg.bind(1);
 			fbo.front.bind(0);
-			let a = 0.995; //0.995;
+			let a = 0.99; //0.995;
 			gl.uniform1i(gl.getUniformLocation(program_showtex, "u_tex0"), 0);
 			gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), showmap ? 1 : 0, a, a, a);
 			glQuad.bind().draw();
@@ -477,6 +485,7 @@ function update() {
 	fbo.front.bind(0);
 	world.data.bind(1); //.submit();
 	world.bg.bind(2);
+	world.areas.bind(3);
 	slab_composite.use();
 	slab_composite.uniform("u_invert", slab_composite_invert);
 	slab_composite.uniform("u_showmap", showmap ? 0.25 : 0);
