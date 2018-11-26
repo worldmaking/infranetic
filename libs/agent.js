@@ -314,5 +314,4 @@
 	} else {
 		window.Agent = Agent;
 	}
-
 })();
