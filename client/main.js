@@ -131,11 +131,14 @@ uniform sampler2D u_map;
 uniform vec4 u_color;
 uniform float u_invert;
 uniform float u_showmap;
+uniform float u_border;
+uniform float u_aspect;
 in vec2 v_texCoord;
 out vec4 outColor;
 void main() {
-	vec2 uv = v_texCoord.xy;
-	//uv = 0.5 + uv*0.1;
+
+	vec2 border = vec2(u_border*u_aspect, u_border);
+	vec2 uv = (v_texCoord.xy * (1.+border*2.)) - border;
 	vec2 uv1 = vec2(uv.x, 1.-uv.y);
 	vec4 data = texture(u_data, uv1);
 	float ways = data.r;
@@ -175,6 +178,8 @@ void main() {
 	"u_color": [1, 1, 1, 1],
 	"u_invert": [slab_composite_invert],
 	"u_showmap": [showmap ? 1 : 0],
+	"u_aspect": [(1920/1080)/(world.size[0]/world.size[1])],
+	"u_border": [0.03],
 })
 
 
