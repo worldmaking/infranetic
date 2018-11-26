@@ -18,7 +18,8 @@
   },
   "nodemonConfig": {
     "ignore": [
-      "docs/*"
+      "docs/*",
+      "client/*"
     ]
   },
   "repository": {

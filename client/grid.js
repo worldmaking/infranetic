@@ -494,27 +494,31 @@ function update() {
 	// fbo.bind().readPixels(); // SLOW!!!
 
 	let ctx = canvas.getContext("2d", { antialias: false, alpha: false});
-	ctx.fillStyle = "black";
+	ctx.fillStyle = slab_composite_invert ? "black" : "white";
 	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-	let smooth = false;
+	let smooth = true;
 	ctx.mozImageSmoothingEnabled = smooth;
 	ctx.webkitImageSmoothingEnabled = smooth;
 	ctx.imageSmoothingQuality = "high";
 	ctx.msImageSmoothingEnabled = smooth;
 	ctx.imageSmoothingEnabled = smooth;
 
-	let zoom = 16;
-	let w = gl.canvas.width/zoom;
-	let xcount = Math.floor(canvas.width / w);
-	let ycount = Math.floor(canvas.height / w);
-	let glw = w/2;
-	let i=0;
+	// let zoom = 16;
+	// let w = gl.canvas.width/zoom;
+	// let xcount = Math.floor(canvas.width / w);
+	// let ycount = Math.floor(canvas.height / w);
+	// let glw = w/2;
+
+	let mapbox = Math.floor(grid.colsize*3/4);
+	let glw = mapbox;
+	let glw2 = glw*2;
 	let fontsize = 12;
 	ctx.font = fontsize + 'px monospace';
 	ctx.textBaseline = "top"
 	ctx.textAlign = "left"
-	ctx.fillStyle = "#888"
+	ctx.fillStyle = slab_composite_invert ? "#888" : "#444";
+	let i=0;
 	for (let y=0; y<grid.rows; y++) {
 		for (let x=0; x<grid.cols; x++, i++) {
 			let id = grid.ids[i];
@@ -524,10 +528,10 @@ function update() {
 			let px = grid.colsize*(x + 1/4);
 			let py = grid.rowsize*(y + 1/4);
 
-			let mapbox = grid.colsize*3/4;
-
+			ctx.fillStyle = slab_composite_invert ? "white" : "black";
+			ctx.fillRect(px, py, mapbox, mapbox);
 			ctx.drawImage(gl.canvas, 
-				ax-glw/2, ay-glw/2, glw, glw,
+				ax-glw, ay-glw, glw2, glw2,
 				px, py, mapbox, mapbox);
 
 			let a = agents[id];
