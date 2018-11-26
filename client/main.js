@@ -131,11 +131,8 @@ uniform sampler2D u_map;
 uniform vec4 u_color;
 uniform float u_invert;
 uniform float u_showmap;
-<<<<<<< HEAD
 uniform float u_border;
 uniform float u_aspect;
-=======
->>>>>>> 8f485229c387ec2bad801a51dd540178d1711625
 in vec2 v_texCoord;
 out vec4 outColor;
 void main() {
@@ -181,11 +178,8 @@ void main() {
 	"u_color": [1, 1, 1, 1],
 	"u_invert": [slab_composite_invert],
 	"u_showmap": [showmap ? 1 : 0],
-<<<<<<< HEAD
 	"u_aspect": [(1920/1080)/(world.size[0]/world.size[1])],
 	"u_border": [0.03],
-=======
->>>>>>> 8f485229c387ec2bad801a51dd540178d1711625
 })
 
 
