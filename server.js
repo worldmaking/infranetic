@@ -249,7 +249,11 @@ const wss = new WebSocket.Server({ server });
 // send a (string) message to all connected clients:
 function send_all_clients(msg) {
 	wss.clients.forEach(function each(client) {
-		client.send(msg);
+		try {
+			client.send(msg);
+		} catch (e) {
+			console.error(e);
+		};
 	});
 }
 
@@ -320,9 +324,13 @@ wss.on('connection', function(ws, req) {
 function handlemessage(msg, session) {
 	switch (msg.cmd) {
 		case "getagents": {
-			let data = JSON.stringify(world.agents_meta);
-			//console.log(data)
-			session.send(data)
+			try {
+				let data = JSON.stringify(world.agents_meta);
+				//console.log(data)
+				session.send(data)
+			} catch (e) {
+				console.error(e);
+			}
 		} break;
 		default: console.log("received JSON", msg, typeof msg);
 	}

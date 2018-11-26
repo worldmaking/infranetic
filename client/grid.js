@@ -66,6 +66,7 @@ for (let i=0; i<grid.cellcount; i++) {
 	grid.cells[i] = {
 		id: Math.floor(Math.random() * NUM_AGENTS),
 		zoom: Math.random(),
+		pos: [0, 0],
 	};
 }
 
@@ -525,36 +526,51 @@ function update() {
 		for (let x=0; x<grid.cols; x++, i++) {
 			let cell = grid.cells[i];
 
-			if (cell.zoom <= 0) {
-				cell.id = Math.floor(Math.random()*NUM_AGENTS);
-				cell.zoom += 1;
-			} 
+			cell.zoom -= fps.dt * 0.01;
+
+			
 
 			let id = cell.id;
-			let ax = agentsVao.positions[id*2];
-			let ay = agentsVao.positions[id*2+1];
-
-			let glw = mapbox*cell.zoom; //grid.zooms[i];
-			let glw2 = glw*2;
-
-			let px = grid.colsize*(x + 1/4);
-			let py = grid.rowsize*(y + 1/4);
-
-			ctx.fillStyle = slab_composite_invert ? "white" : "black";
-			ctx.fillRect(px, py, mapbox, mapbox);
-			ctx.drawImage(gl.canvas, 
-				ax-glw, ay-glw, glw2, glw2,
-				px, py, mapbox, mapbox);
-
 			let a = agents[id];
 			if (a) {
+
+				if (a.reward < 0.15) continue;
+				
+				if (cell.zoom <= 0.0) {
+					cell.id = Math.floor(Math.random()*NUM_AGENTS);
+					cell.zoom = 2;
+				} 
+
+				
+
+				vec2.lerp(cell.pos, cell.pos, [agentsVao.positions[id*2],agentsVao.positions[id*2+1]], 0.05);
+				//cell.zoom += 0.002*(Math.pow(a.reward,4) - cell.zoom);
+
+				let ax = cell.pos[0];
+				let ay = cell.pos[1];
+
+				let glw = mapbox*cell.zoom; //grid.zooms[i];
+				let glw2 = glw*2;
+
+				let px = grid.colsize*(x + 1/4);
+				let py = grid.rowsize*(y + 1/4);
+
+				ctx.fillStyle = slab_composite_invert ? "white" : "black";
+				ctx.fillRect(px, py, mapbox, mapbox);
+				ctx.drawImage(gl.canvas, 
+					ax-glw, ay-glw, glw2, glw2,
+					px, py, mapbox, mapbox);
+
+			
 				ctx.fillText(a.birthdate,  px, py+mapbox + fontsize*0);
 				
 				let loc = `${Math.floor(ax)} ${Math.floor(ay)}`;
 				ctx.fillText(loc, px, py+mapbox + fontsize*1);
+				
+				let stats = `${a.reward.toFixed(3)}`;
+				ctx.fillText(stats, px, py+mapbox + fontsize*2);
 			}
 
-			cell.zoom -= fps.dt * 0.01;
 		}
 	}
 
@@ -567,8 +583,9 @@ function update() {
 		//agents.sort((a, b) => b.reward - a.reward);
 
 		
-		sock.send({"cmd":"getagents"});
+		
 	}
+	sock.send({"cmd":"getagents"});
 }
 
 

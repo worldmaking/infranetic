@@ -63,7 +63,7 @@
             this.dphase = 0;
             this.phase = Math.random();
             this.active = Math.random();
-            this.reward = 0.5;
+            this.meta.reward = 0.5;
 
             this.meta.birthdate = new Date().toISOString().replace(/[-:.TZ]/g, "").substring(4);
         }
@@ -98,9 +98,9 @@
             //world.data.data[widx*4 + 3] = 0;
 
 
-            // simple reward for staying on the roads for now:
-            this.reward = Math.max(this.reward * 0.99, wayfound * marked);
-            if (this.reward < 0.1) {
+            // simple meta.reward for staying on the roads for now:
+            this.meta.reward = Math.max(this.meta.reward * 0.99, wayfound * marked);
+            if (this.meta.reward < 0.1) {
                 //this.reset_copy(utils.pick(agents));
                 this.reset(world);
                 return;
@@ -139,7 +139,7 @@
             vec2.set(this.fwd, Math.cos(this.dir), Math.sin(this.dir))
 
             if (0) {
-                this.scent[0] = this.reward;
+                this.scent[0] = this.meta.reward;
                 this.scent[1] = 0.5; //outputs[0];
                 this.scent[2] = 1 - this.scent[0]; //outputs[1];
             }
@@ -171,11 +171,11 @@
                 for (let n of near) {
                     if (n == this) continue;
 
-                    if (Math.random() < 0.1*(n.reward - this.reward)) {
+                    if (Math.random() < 0.1*(n.meta.reward - this.meta.reward)) {
                         // copy the network:
                         this.network = neato.copyNetwork(n.network)
                         if (Math.random() < 0.01) neato.mutateOnce(this.network);
-                        this.reward = n.reward;
+                        this.meta.reward = n.meta.reward;
                     }
 
                     // get activation difference:
