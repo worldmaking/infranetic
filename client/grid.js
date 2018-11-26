@@ -52,23 +52,9 @@ let agents = [];
 
 
 // 16:9, closest to 8:4 or 8:5
-const grid = {
-	cols: 11, 
-	rows: 5,
-	cellcount: 144,
-	colsize: 170,
-	rowsize: 205,
-
-	cells: [],
-};
-grid.cellcount = grid.cols * grid.rows;
-for (let i=0; i<grid.cellcount; i++) {
-	grid.cells[i] = {
-		id: Math.floor(Math.random() * NUM_AGENTS),
-		zoom: Math.random(),
-		pos: [0, 0],
-	};
-}
+let grid = null; // arrives over the socket instead
+let grid_colsize = 170;
+let grid_rowsize = 205;
 
 let fps = new utils.FPS();
 let running = true;
@@ -504,47 +490,28 @@ function update() {
 	ctx.imageSmoothingQuality = "high";
 	ctx.msImageSmoothingEnabled = smooth;
 	ctx.imageSmoothingEnabled = smooth;
-
-	let mapbox = Math.floor(grid.colsize*3/4);
-	
 	let fontsize = 12;
 	ctx.font = fontsize + 'px monospace';
 	ctx.textBaseline = "top"
 	ctx.textAlign = "left"
 	ctx.fillStyle = slab_composite_invert ? "#888" : "#444";
-	let i=0;
-	for (let y=0; y<grid.rows; y++) {
-		for (let x=0; x<grid.cols; x++, i++) {
-			let cell = grid.cells[i];
 
-			cell.zoom -= fps.dt * 0.01;
+	if (grid) {
+		let mapbox = Math.floor(grid_colsize*3/4);
+		let i=0;
+		for (let y=0; y<grid.rows; y++) {
+			for (let x=0; x<grid.cols; x++, i++) {
+				let watcher = grid.watchers[i];
+				if (watcher.reward < 0.15) continue;
 
-			
+				let ax = watcher.pos[0];
+				let ay = watcher.pos[1];
 
-			let id = cell.id;
-			let a = agents[id];
-			if (a) {
-
-				if (a.reward < 0.15) continue;
-
-				if (cell.zoom <= 0.05) {
-					cell.id = Math.floor(Math.random()*NUM_AGENTS);
-					cell.zoom = 2;
-				} 
-
-				
-
-				vec2.lerp(cell.pos, cell.pos, [agentsVao.positions[id*2],agentsVao.positions[id*2+1]], 0.05);
-				//cell.zoom += 0.002*(Math.pow(a.reward,4) - cell.zoom);
-
-				let ax = cell.pos[0];
-				let ay = cell.pos[1];
-
-				let glw = mapbox*cell.zoom; //grid.zooms[i];
+				let glw = mapbox*watcher.zoom; //grid.zooms[i];
 				let glw2 = glw*2;
 
-				let px = grid.colsize*(x + 1/4);
-				let py = grid.rowsize*(y + 1/4);
+				let px = grid_colsize*(x + 1/4);
+				let py = grid_rowsize*(y + 1/4);
 
 				ctx.fillStyle = slab_composite_invert ? "white" : "black";
 				ctx.fillRect(px, py, mapbox, mapbox);
@@ -552,17 +519,11 @@ function update() {
 					ax-glw, ay-glw, glw2, glw2,
 					px, py, mapbox, mapbox);
 			
-				ctx.fillText(a.birthdata,  px, py+mapbox + fontsize*0);
-				
-				let tokm = world.meters_per_pixel * 0.001;
-				let loc = `${(ax*tokm).toFixed(1)},${(ay*tokm).toFixed(1)}km (${Math.floor(100*ax/world.size[0])},${Math.floor(100*ay/world.size[1])})`
+				ctx.fillText(watcher.labels[0],  px, py+mapbox + fontsize*0);
+				ctx.fillText(watcher.labels[1], px, py+mapbox + fontsize*1);
+				ctx.fillText(watcher.labels[2], px, py+mapbox + fontsize*2);
 
-				ctx.fillText(loc, px, py+mapbox + fontsize*1);
-
-				let stats = `${a.reward.toFixed(3)}`;
-				ctx.fillText(stats, px, py+mapbox + fontsize*2);
 			}
-
 		}
 	}
 
@@ -626,7 +587,8 @@ try {
 				
 			},
 			onmessage: function(msg) { 
-				agents = msg;
+				if (!grid) console.log(msg)
+				grid = msg;
 				//console.log("received agents", agents.length)
 				//console.log(agents[0])
 			},

@@ -115,6 +115,7 @@ world.size[0] = Math.floor(world.size[1] * world.aspect);
 world.meters_per_pixel = world.meters[1] / world.size[1];
 world.pixels_per_meter = 1/world.meters_per_pixel;
 world.norm = [1/world.size[0], 1/world.size[1]];
+let tokm = world.meters_per_pixel * 0.001;
 
 const floatBytes = 4;
 const shortBytes = 2;
@@ -138,6 +139,44 @@ let space = new SpaceHash({
 });
 
 world.agents = agents;
+
+const grid = {
+	cols: 11, 
+	rows: 5,
+};
+
+class Watcher {
+	constructor(i) {
+		this.id = i;
+		this.col = i % grid.cols;
+		this.row = Math.floor(i / grid.cols);
+		this.agent = Math.floor(Math.random()*NUM_AGENTS);
+		this.zoom = Math.random();
+		this.pos = [0, 0];
+		this.labels = [];
+	}
+
+	update(world, fps) {
+		this.zoom -= fps.dt * 0.01;
+		if (this.zoom <= 0.05) {
+			this.agent = Math.floor(Math.random()*NUM_AGENTS);
+			this.zoom = 2;
+		} 
+
+		let a = agents[this.agent];
+		vec2.lerp(this.pos, this.pos, a.pos, 0.05);
+		//cell.zoom += 0.002*(Math.pow(a.reward,4) - cell.zoom);
+		this.reward = a.meta.reward;
+		this.labels[0] = a.meta.birthdata;
+		this.labels[1] = `${(this.pos[0]*tokm).toFixed(1)},${(this.pos[0]*tokm).toFixed(1)}km (${Math.floor(100*this.pos[0]/world.size[0])},${Math.floor(100*this.pos[0]/world.size[1])})`
+		this.labels[2] = `${a.meta.reward.toFixed(3)}`;
+	}
+};
+
+let watchers = [];
+let cellcount = grid.cols * grid.rows;
+
+
 
 let fps = new utils.FPS();
 let running = true;
@@ -209,6 +248,13 @@ function update() {
 		}
 	}
 
+	for (let w of watchers) {
+		w.update(world, fps);
+	}
+
+	
+	if (t < 1) console.log(JSON.stringify(watchers[0]));
+
 	fps.tick();
 	if (fps.t % 5 < fps.dt) {
 		console.log("fps: ", Math.floor(fps.fpsavg))
@@ -230,6 +276,11 @@ for (let i=0; i<NUM_AGENTS; i++) {
 	agents.push(a);
 	space.insertPoint(a);
 }
+
+for (let i=0; i<cellcount; i++) {
+	watchers[i] = new Watcher(i); 
+}
+grid.watchers = watchers;
 
 ////////////////////////
 
@@ -322,9 +373,9 @@ function handlemessage(msg, session) {
 	switch (msg.cmd) {
 		case "getagents": {
 			try {
-				let data = JSON.stringify(world.agents_meta);
+				//let data = JSON.stringify(world.agents_meta);
 				//console.log(data)
-				session.send(data)
+				session.send(JSON.stringify(grid))
 			} catch (e) {
 				console.error(e);
 			}
