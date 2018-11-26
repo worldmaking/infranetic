@@ -67,17 +67,20 @@
             this.active = Math.random();
             this.meta.reward = 0.5;
 
-            this.meta.birthdata = new Date().toISOString().replace(/[-:.TZ]/g, "").substring(4);
             let color = [0, 0, 0, 0];
+            let name = ""
             world.areas.readInto(this.pos[0], this.pos[1], color);
-            if (color[1] > 0.1) this.meta.birthdata += "G";
-            if (color[0] > 0.1) this.meta.birthdata += "H";
-            if (color[2] > 0.1) this.meta.birthdata += "I";
+            if (color[1] > 0.1) name += "N";
+            if (color[0] > 0.1) name += "B";
+            if (color[2] > 0.1) name += "I";
             world.data.readInto(this.pos[0], this.pos[1], color);
-            if (color[1] > 0.1) this.meta.birthdata += "A";
+            if (color[1] > 0.1) name += "M";
             world.ways.readInto(this.pos[0], this.pos[1], color);
-            if (color[1] > 0.1) this.meta.birthdata += "W";
-            if (this.meta.birthdata.length == 0) this.meta.birthdata = "Z";
+            if (color[1] > 0.1) name += "W";
+            if (name.length == 0) name = "Z";
+
+            let d = new Date();
+            this.meta.birthdata = `${d.getMonth()+1}${d.getDate()}_${d.getHours()}:${d.getMinutes()}_${name}`;
 
         }
 

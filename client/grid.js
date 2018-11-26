@@ -554,8 +554,13 @@ function update() {
 			
 				ctx.fillText(a.birthdata,  px, py+mapbox + fontsize*0);
 				
-				let stats = `${Math.floor(ax)} ${Math.floor(ay)} ${a.reward.toFixed(3)}`;
-				ctx.fillText(stats, px, py+mapbox + fontsize*1);
+				let tokm = world.meters_per_pixel * 0.001;
+				let loc = `${(ax*tokm).toFixed(1)},${(ay*tokm).toFixed(1)}km (${Math.floor(100*ax/world.size[0])},${Math.floor(100*ay/world.size[1])})`
+
+				ctx.fillText(loc, px, py+mapbox + fontsize*1);
+
+				let stats = `${a.reward.toFixed(3)}`;
+				ctx.fillText(stats, px, py+mapbox + fontsize*2);
 			}
 
 		}
