@@ -296,7 +296,9 @@ function handlemessage(msg, session) {
 }
 
 server.listen(8080, function() {
-	console.log(`server listening on http://localhost:${server.address().port}`, );
+	console.log(`server listening`);
+	console.log(`main view on http://localhost:${server.address().port}/main.html`);
+	console.log(`grid view on http://localhost:${server.address().port}/grid.html`);
 });
 
 update();

@@ -270,6 +270,10 @@
             this.dir = Math.atan2(this.fwd[1], this.fwd[0]);
 
             this.wrap(world);
+
+            if (isNaN(this.pos[0]) || isNaN(this.pos[1])) {
+                this.reset(world);
+            }
         }
 
         clamp(world) {

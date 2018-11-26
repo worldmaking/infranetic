@@ -16,7 +16,6 @@ class Socket {
 
         let connect = function() {
             const addr = self.transport+'://'+self.hostname+':'+self.port;
-            console.log(addr);
             self.socket = new WebSocket(addr, self.protocols);
             self.socket.binaryType = 'arraybuffer';
             self.socket.onerror = self.onerror;

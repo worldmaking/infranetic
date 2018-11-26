@@ -1,7 +1,13 @@
+
 let canvas = document.getElementById("canvas");
+canvas.width = 1920;
+canvas.height = 1080; 
+
+let glcanvas = document.createElement("canvas");
+//document.getElementById("glcanvas");
 //let glcanvas = document.createElement("canvas");
 
-let gl = canvas.getContext("webgl2", {
+let gl = glcanvas.getContext("webgl2", {
 	antialias: false,
 	alpha: false
 });
@@ -38,20 +44,38 @@ world.meters_per_pixel = world.meters[1] / world.size[1];
 world.pixels_per_meter = 1/world.meters_per_pixel;
 world.norm = [1/world.size[0], 1/world.size[1]];
 
+
 const NUM_AGENTS = 5000;
 const MAX_NEIGHBOURS = 4;
 const MAX_LINE_POINTS = NUM_AGENTS*MAX_NEIGHBOURS;
 let agents = [];
 
+
+// 16:9, closest to 8:4 or 8:5
+const grid = {
+	cols: 16, 
+	rows: 9,
+	cellcount: 144,
+	cellsize: 120,
+
+	ids: []
+};
+grid.cellsize = canvas.width / grid.cols;
+grid.cellcount = grid.cols * grid.rows;
+for (let i=0; i<grid.cellcount; i++) {
+	grid.ids[i] = Math.floor(Math.random() * NUM_AGENTS);
+}
+
 let fps = new utils.FPS();
 let running = true;
 
-let showlines = false;
+let showlines = true;
+let showmap = false;
+let showgrid = false;
 
-canvas.width = world.size[0];
-canvas.height = world.size[1]; 
 gl.canvas.width = world.size[0];
 gl.canvas.height = world.size[1];
+
 
 world.data = createPixelTexture(gl, world.size[0], world.size[1], true).load("img/data.png");
 
@@ -81,12 +105,13 @@ world.data = createPixelTexture(gl, world.size[0], world.size[1], true).load("im
 
 function resize() {
 	let w = window.innerWidth, h = window.innerHeight;
-	console.log("window size", w, h);
+	console.log(w, h);
 	let window_aspect = w/h;
 	let canvas_aspect = world.aspect/window_aspect;
-
-	canvas.style.width = w + "px";
-	canvas.style.height = h + "px";
+	//canvas.width = w;
+	//canvas.height = h;
+	//canvas.style.width = w + "px";
+	//canvas.style.height = h + "px";
 }
 
 let fbo = createFBO(gl, gl.canvas.width, gl.canvas.height, true);
@@ -269,7 +294,7 @@ uniform mat3 u_matrix;
 uniform float u_pointsize;
 void main() {
 	gl_Position = vec4((u_matrix * vec3(a_position.xy, 1)).xy, 0, 1);
-	float a = 0.3 + a_color.a*a_color.a*0.7;
+	float a = 0.3 + a_color.a*0.7;
 	gl_PointSize = u_pointsize * a;
 	color = a_color;
 }
@@ -287,7 +312,7 @@ void main() {
 }
 `);
 gl.useProgram(program_agents);
-gl.uniform1f(gl.getUniformLocation(program_agents, "u_pointsize"), 3);
+gl.uniform1f(gl.getUniformLocation(program_agents, "u_pointsize"), 2);
 
 let linesVao = {
 	id: gl.createVertexArray(),
@@ -448,7 +473,6 @@ function update() {
 				gl.uniformMatrix3fv(gl.getUniformLocation(program_lines, "u_matrix"), false, viewmat);
 				linesVao.bind().submit().draw();
 			}
-
 			
 		}
 		fbo.end(); 
@@ -469,29 +493,56 @@ function update() {
 
 	// fbo.bind().readPixels(); // SLOW!!!
 
-	
-	if (0) {
-		let ctx = canvas.getContext("2d", { antialias: true, alpha: false });
-		let rr = (gl.canvas.width/gl.canvas.height) / (canvas.width/canvas.height);
-		if (rr > 1) {
-			let h = Math.floor(canvas.height / rr);
+	let ctx = canvas.getContext("2d", { antialias: false, alpha: false});
+	ctx.fillStyle = "black";
+	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+	let smooth = false;
+	ctx.mozImageSmoothingEnabled = smooth;
+	ctx.webkitImageSmoothingEnabled = smooth;
+	ctx.imageSmoothingQuality = "high";
+	ctx.msImageSmoothingEnabled = smooth;
+	ctx.imageSmoothingEnabled = smooth;
+
+	let zoom = 16;
+	let w = gl.canvas.width/zoom;
+	let xcount = Math.floor(canvas.width / w);
+	let ycount = Math.floor(canvas.height / w);
+	let glw = w/2;
+	let i=0;
+	let fontsize = 12;
+	ctx.font = fontsize + 'px monospace';
+	ctx.textBaseline = "top"
+	ctx.textAlign = "left"
+	ctx.fillStyle = "#555"
+	for (let y=0; y<grid.rows; y++) {
+		for (let x=0; x<grid.cols; x++, i++) {
+			let id = grid.ids[i];
+			let ax = agentsVao.positions[id*2];
+			let ay = agentsVao.positions[id*2+1];
+
+			let px = grid.cellsize*(x + 1/4);
+			let py = grid.cellsize*(y);
+
 			ctx.drawImage(gl.canvas, 
-				0, 0, gl.canvas.width, gl.canvas.height,
-				0, (canvas.height-h)/2, canvas.width, h);
-		} else {
-			let w = Math.floor(canvas.width * rr);
-			ctx.drawImage(gl.canvas, 
-				0, 0, gl.canvas.width, gl.canvas.height,
-				Math.floor((canvas.width-w)/2), 0, w, canvas.height);
+				ax-glw/2, ay-glw/2, glw, glw,
+				px, py, grid.cellsize/2, grid.cellsize/2);
+			ctx.fillText(id,  px, py+grid.cellsize/2 + fontsize*0);
+			
+			let loc = `${Math.floor(ax)} ${Math.floor(ay)}`;
+			ctx.fillText(loc, px, py+grid.cellsize/2 + fontsize*1);
 		}
-	} 
+	}
 
 	fps.tick();
+	//document.getElementById("fps").textContent = Math.floor(fps.fpsavg);
 	//
 	if (fps.t % 5 < fps.dt) {
 		console.log("fps: ", Math.floor(fps.fpsavg))
 		//refocus();
 		//agents.sort((a, b) => b.reward - a.reward);
+
+		grid.ids[Math.floor(Math.random()*grid.cellcount)] = Math.floor(Math.random()*NUM_AGENTS);
 	}
 }
 
