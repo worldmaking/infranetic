@@ -53,14 +53,14 @@ let agents = [];
 
 // 16:9, closest to 8:4 or 8:5
 const grid = {
-	cols: 16, 
-	rows: 9,
+	cols: 11, 
+	rows: 5,
 	cellcount: 144,
-	cellsize: 120,
+	colsize: 175,
+	rowsize: 190,
 
 	ids: []
 };
-grid.cellsize = canvas.width / grid.cols;
 grid.cellcount = grid.cols * grid.rows;
 for (let i=0; i<grid.cellcount; i++) {
 	grid.ids[i] = Math.floor(Math.random() * NUM_AGENTS);
@@ -521,28 +521,32 @@ function update() {
 			let ax = agentsVao.positions[id*2];
 			let ay = agentsVao.positions[id*2+1];
 
-			let px = grid.cellsize*(x + 1/4);
-			let py = grid.cellsize*(y);
+			let px = grid.colsize*(x + 1/4);
+			let py = grid.rowsize*(y + 1/4);
+
+			let mapbox = grid.colsize*3/4;
 
 			ctx.drawImage(gl.canvas, 
 				ax-glw/2, ay-glw/2, glw, glw,
-				px, py, grid.cellsize/2, grid.cellsize/2);
-			ctx.fillText(id,  px, py+grid.cellsize/2 + fontsize*0);
+				px, py, mapbox, mapbox);
+			ctx.fillText(id,  px, py+mapbox + fontsize*0);
 			
 			let loc = `${Math.floor(ax)} ${Math.floor(ay)}`;
-			ctx.fillText(loc, px, py+grid.cellsize/2 + fontsize*1);
+			ctx.fillText(loc, px, py+mapbox + fontsize*1);
 		}
 	}
 
 	fps.tick();
 	//document.getElementById("fps").textContent = Math.floor(fps.fpsavg);
 	//
-	if (fps.t % 5 < fps.dt) {
+	if (fps.t % 1 < fps.dt) {
 		console.log("fps: ", Math.floor(fps.fpsavg))
 		//refocus();
 		//agents.sort((a, b) => b.reward - a.reward);
 
 		grid.ids[Math.floor(Math.random()*grid.cellcount)] = Math.floor(Math.random()*NUM_AGENTS);
+
+		sock.send({"cmd":"getagents"});
 	}
 }
 
@@ -589,7 +593,7 @@ try {
 		sock = new Socket({
 			reload_on_disconnect: true,
 			onopen: function() {
-				this.send(JSON.stringify({ type: "getdata", date: Date.now() }));
+				
 			},
 			onmessage: function(msg) { 
 				print("received", msg);

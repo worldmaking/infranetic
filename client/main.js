@@ -538,7 +538,7 @@ try {
 		sock = new Socket({
 			reload_on_disconnect: true,
 			onopen: function() {
-				this.send(JSON.stringify({ type: "getdata", date: Date.now() }));
+				//this.send({ cmd: "getdata", date: Date.now() });
 			},
 			onmessage: function(msg) { 
 				print("received", msg);

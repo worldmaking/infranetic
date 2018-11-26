@@ -102,7 +102,7 @@ const world = {
 	data: new ArrayFromImg(path.join(client_path, "img", 'data.png')),
 
 	
-
+	agents_near: [],
 };
 world.aspect = world.meters[0]/world.meters[1];
 world.size[0] = Math.floor(world.size[1] * world.aspect);
@@ -176,9 +176,10 @@ function update() {
 		for (let i=0; i<agents.length; i++) {
 			let a = agents[i];
 			let search_radius = 25;
-			a.near = space.searchUnique(a, search_radius, MAX_NEIGHBOURS);
+			let near = world.agents_near[a.id];
+			space.searchUnique(a, search_radius, MAX_NEIGHBOURS, near);
 			if (linecount < MAX_LINE_POINTS) {
-				for (let n of a.near) {
+				for (let n of near) {
 					lines[linecount++] = a.id;
 					lines[linecount++] = n.id;
 				}
@@ -202,6 +203,7 @@ function update() {
 
 for (let i=0; i<NUM_AGENTS; i++) {
 	let a = new Agent(i, world);
+	world.agents_near[i] = [];
 	agents.push(a);
 	space.insertPoint(a);
 }
@@ -265,7 +267,7 @@ wss.on('connection', function(ws, req) {
 			//console.log(new Float32Array(ab));
 		} else {
 			try {
-				handlemessage(JSON.parse(e));
+				handlemessage(JSON.parse(e), ws);
 			} catch (e) {
 				console.log('bad JSON: ', e);
 			}
@@ -290,8 +292,13 @@ wss.on('connection', function(ws, req) {
 
 
 function handlemessage(msg, session) {
-	{
-		console.log("received JSON", msg);
+	switch (msg.cmd) {
+		case "getagents": {
+			let data = JSON.stringify(agents);
+			//console.log(data)
+			session.send("hi")
+		} break;
+		default: console.log("received JSON", msg, typeof msg);
 	}
 }
 

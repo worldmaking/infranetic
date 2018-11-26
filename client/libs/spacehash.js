@@ -204,14 +204,14 @@
 		// returns a list of what it finds
 		// list will be only approximately sorted by distance
 		// pos = o.pos, the list will include o
-		searchUnique(self, dist, limit=Infinity) {
+		searchUnique(self, dist, limit=Infinity, res=[]) {
 			const pos = self.pos;
 			const rCellSize = 1 / this.cellSize;
 			const ch = (pos[0] * rCellSize);
 			const cv = (pos[1] * rCellSize);
 			const dist2 = dist * dist;
 			var i, v, h, l, n, neighbour, npos, shell, cell, relx, rely, d2;
-			var res = [];
+			res.length = 0;
 			for (i=0; i<this.shells.length; i++) {
 				shell = this.shells[i];
 				if (shell.radius2 > dist2) break;

@@ -64,7 +64,6 @@
             this.reward = 0.5;
 
             this.birthdate = new Date().toISOString().replace(/[-:.TZ]/g, "").substring(4);
-            this.near = [];
         }
 
         update(world, agents) {    
@@ -162,11 +161,12 @@
             */
             
             let dp = 0;
-            if (this.near.length > 1) {
+            let near = world.agents_near[this.id];
+            if (near.length > 1) {
                 let pdavg = 0;
                 let adavg = 0;
                 let aavg = 0;
-                for (let n of this.near) {
+                for (let n of near) {
                     if (n == this) continue;
 
                     if (Math.random() < 0.1*(n.reward - this.reward)) {
@@ -230,18 +230,18 @@
                         vec2.set(this.side, this.fwd[1], -this.fwd[0]);
                     }
                 }
-                pdavg /= this.near.length;
-                adavg /= this.near.length;
+                pdavg /= near.length;
+                adavg /= near.length;
 
                 //this.dphase = entrainment*pdavg;
                 //this.dphase = entrainment*adavg;
                 //this.dphase = entrainment * shift;
 
-                aavg /= this.near.length;
+                aavg /= near.length;
                 this.dphase = -entrainment * (aavg);
                 this.rate += 0.1 * this.dphase;
 
-            // this.dphase = dp * entrainment / this.near.length;
+            // this.dphase = dp * entrainment / near.length;
             } else {
                 this.dphase = deviation*Math.random();
             }
