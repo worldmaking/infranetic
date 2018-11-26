@@ -137,9 +137,10 @@ in vec2 v_texCoord;
 out vec4 outColor;
 void main() {
 
-	vec2 border = vec2(u_border*u_aspect, u_border);
-	vec2 uv = (v_texCoord.xy * (1.+border*2.)) - border;
+
+	vec2 uv = (v_texCoord.xy*2.-1.) * (1. + u_border*2.) * vec2(u_aspect, 1.) * 0.5 + 0.5;
 	vec2 uv1 = vec2(uv.x, 1.-uv.y);
+
 	vec4 data = texture(u_data, uv1);
 	float ways = data.r;
 	float altitude = data.g;
@@ -150,7 +151,6 @@ void main() {
 	vec2 onePixel = vec2(1.0, 1.0) / texSize;
 
 	vec4 image = texture(u_image, uv);
-	
 	vec4 image1 = texture(u_image, uv+vec2(onePixel.x, 0.));
 	vec4 image2 = texture(u_image, uv+vec2(0., onePixel.y));
 	vec4 image3 = texture(u_image, uv+vec2(onePixel.x, onePixel.y));
@@ -480,6 +480,8 @@ function update() {
 	slab_composite.use();
 	slab_composite.uniform("u_invert", slab_composite_invert);
 	slab_composite.uniform("u_showmap", showmap ? 0.25 : 0);
+	let aspect = (window.innerWidth/window.innerHeight)/(world.size[0]/world.size[1]);
+	slab_composite.uniform("u_aspect", aspect);
 	slab_composite.draw();
 
 	// fbo.bind().readPixels(); // SLOW!!!
