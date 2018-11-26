@@ -59,11 +59,14 @@ const grid = {
 	colsize: 170,
 	rowsize: 205,
 
-	ids: []
+	cells: [],
 };
 grid.cellcount = grid.cols * grid.rows;
 for (let i=0; i<grid.cellcount; i++) {
-	grid.ids[i] = Math.floor(Math.random() * NUM_AGENTS);
+	grid.cells[i] = {
+		id: Math.floor(Math.random() * NUM_AGENTS),
+		zoom: Math.random(),
+	};
 }
 
 let fps = new utils.FPS();
@@ -511,8 +514,7 @@ function update() {
 	// let glw = w/2;
 
 	let mapbox = Math.floor(grid.colsize*3/4);
-	let glw = mapbox;
-	let glw2 = glw*2;
+	
 	let fontsize = 12;
 	ctx.font = fontsize + 'px monospace';
 	ctx.textBaseline = "top"
@@ -521,9 +523,19 @@ function update() {
 	let i=0;
 	for (let y=0; y<grid.rows; y++) {
 		for (let x=0; x<grid.cols; x++, i++) {
-			let id = grid.ids[i];
+			let cell = grid.cells[i];
+
+			if (cell.zoom <= 0) {
+				cell.id = Math.floor(Math.random()*NUM_AGENTS);
+				cell.zoom += 1;
+			} 
+
+			let id = cell.id;
 			let ax = agentsVao.positions[id*2];
 			let ay = agentsVao.positions[id*2+1];
+
+			let glw = mapbox*cell.zoom; //grid.zooms[i];
+			let glw2 = glw*2;
 
 			let px = grid.colsize*(x + 1/4);
 			let py = grid.rowsize*(y + 1/4);
@@ -541,6 +553,8 @@ function update() {
 				let loc = `${Math.floor(ax)} ${Math.floor(ay)}`;
 				ctx.fillText(loc, px, py+mapbox + fontsize*1);
 			}
+
+			cell.zoom -= fps.dt * 0.01;
 		}
 	}
 
@@ -552,8 +566,7 @@ function update() {
 		//refocus();
 		//agents.sort((a, b) => b.reward - a.reward);
 
-		grid.ids[Math.floor(Math.random()*grid.cellcount)] = Math.floor(Math.random()*NUM_AGENTS);
-
+		
 		sock.send({"cmd":"getagents"});
 	}
 }
