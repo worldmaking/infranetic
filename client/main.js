@@ -38,15 +38,16 @@ world.meters_per_pixel = world.meters[1] / world.size[1];
 world.pixels_per_meter = 1/world.meters_per_pixel;
 world.norm = [1/world.size[0], 1/world.size[1]];
 
-const NUM_AGENTS = 5000;
+const NUM_AGENTS = 3000;
 const MAX_NEIGHBOURS = 4;
-const MAX_LINE_POINTS = NUM_AGENTS*MAX_NEIGHBOURS;
+const MAX_LINE_POINTS = NUM_AGENTS;
 let agents = [];
 
 let fps = new utils.FPS();
 let running = true;
 
 let showlines = false;
+let showmap = false;
 
 canvas.width = world.size[0];
 canvas.height = world.size[1]; 
@@ -55,6 +56,8 @@ gl.canvas.height = world.size[1];
 
 world.data = createPixelTexture(gl, world.size[0], world.size[1], true).load("img/data.png");
 
+world.bg = //createPixelTexture(gl, world.size[0], world.size[1], true).load("img/gwangju.png");
+loadTexture(gl, "img/gwangju.png", true);
 // let dataTex = createPixelTexture(gl, world.size[0], world.size[1]).allocate(); //loadTexture(gl, 'img/data.png', true);
 // world.data = new ArrayFromImg('img/data.png', function() {
 // 	// console.log(this);
@@ -103,19 +106,20 @@ void main() {
 `, 
 `#version 300 es
 precision mediump float;
-uniform sampler2D u_image;
+uniform sampler2D u_tex0;
 uniform vec4 u_color;
 in vec2 v_texCoord;
 out vec4 outColor;
 void main() {
-	outColor = texture(u_image, v_texCoord).rgba;
-	float avg = (outColor.r + outColor.g + outColor.b) / 3.;
+	vec4 tex0 = texture(u_tex0, v_texCoord).rgba;
+	outColor = vec4(tex0.rgb, 1.);
+	float avg = (outColor.r + outColor.g + outColor.b) * 0.333;
 	outColor.rgb = mix(outColor.rgb, vec3(avg), 0.1);
-	outColor *= u_color.a;
+	outColor.rgb *= u_color.a;
 }
 `)
 gl.useProgram(program_showtex);
-gl.uniform1i(gl.getUniformLocation(program_showtex, "u_image"), 0);
+gl.uniform1i(gl.getUniformLocation(program_showtex, "u_tex0"), 0);
 gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), 1, 1, 1, 0.02);
 
 let slab_composite_invert = 0;
@@ -123,8 +127,10 @@ let slab_composite = createSlab(gl, `#version 300 es
 precision highp float;
 uniform sampler2D u_image;
 uniform sampler2D u_data;
+uniform sampler2D u_map;
 uniform vec4 u_color;
 uniform float u_invert;
+uniform float u_showmap;
 in vec2 v_texCoord;
 out vec4 outColor;
 void main() {
@@ -154,6 +160,8 @@ void main() {
 
 	//outColor.rgb = 1.-outColor.rgb;
 
+	outColor += texture(u_map, uv) * u_showmap;
+
 	float gamma = 1.5;
     outColor.rgb = pow(outColor.rgb, vec3(1.0/gamma));
 
@@ -163,8 +171,10 @@ void main() {
 `,{
 	"u_image": [0],
 	"u_data": [1],
+	"u_map": [2],
 	"u_color": [1, 1, 1, 1],
 	"u_invert": [slab_composite_invert],
+	"u_showmap": [showmap ? 1 : 0],
 })
 
 
@@ -424,14 +434,12 @@ function update() {
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 			// feedback:
 
-			//gl.activeTexture(gl.TEXTURE0 + 1);
-			//gl.bindTexture(gl.TEXTURE_2D, chan1.id);
-			gl.activeTexture(gl.TEXTURE0 + 0);
-			gl.bindTexture(gl.TEXTURE_2D, fbo.front.id);
-			//gl.bindTexture(gl.TEXTURE_2D, chan1.id);
 			gl.useProgram(program_showtex);
-			let a = 0.9995; //0.995;
-			gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), a, a, a, a);
+			world.bg.bind(1);
+			fbo.front.bind(0);
+			let a = 0.995; //0.995;
+			gl.uniform1i(gl.getUniformLocation(program_showtex, "u_tex0"), 0);
+			gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), showmap ? 1 : 0, a, a, a);
 			glQuad.bind().draw();
 
 			let viewmat = [
@@ -463,8 +471,10 @@ function update() {
 
 	fbo.front.bind(0);
 	world.data.bind(1); //.submit();
+	world.bg.bind(2);
 	slab_composite.use();
 	slab_composite.uniform("u_invert", slab_composite_invert);
+	slab_composite.uniform("u_showmap", showmap ? 0.25 : 0);
 	slab_composite.draw();
 
 	// fbo.bind().readPixels(); // SLOW!!!
@@ -512,7 +522,7 @@ window.addEventListener("keyup", function(event) {
 	} else if (event.key == "z") {
 		refocus();
 	} else if (event.key == "m") {
-		agents.sort((a, b) => b.reward - a.reward);
+		showmap = !showmap; //agents.sort((a, b) => b.reward - a.reward);
 	} else if (event.key == "l") {
 		showlines = !showlines;
 	} else if (event.key == "i") {

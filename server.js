@@ -12,11 +12,15 @@ const WebSocket = require('ws');
 const PNG = require("pngjs").PNG;
 const { vec2, vec3 } = require("gl-matrix");
 
-const neataptic = require("./client/libs/neataptic.js");
+
+const mmapfile = require('mmapfile');
+
 const utils = require("./client/libs/utils.js");
-const SpaceHash = require("./client/libs/spacehash.js");
-const neato = require("./client/libs/neato.js");
-const Agent = require("./client/libs/agent.js");
+
+const neataptic = require("./libs/neataptic.js");
+const SpaceHash = require("./libs/spacehash.js");
+const neato = require("./libs/neato.js");
+const Agent = require("./libs/agent.js");
 
 const project_path = process.cwd();
 const server_path = __dirname;
@@ -24,6 +28,8 @@ const client_path = path.join(server_path, "client");
 console.log("project_path", project_path);
 console.log("server_path", server_path);
 console.log("client_path", client_path);
+
+
 
 
 // loads an image and turns it into a typedarray and offscreen canvas
@@ -82,9 +88,10 @@ class ArrayFromImg {
 
 ////////////////////////
 
-const NUM_AGENTS = 5000;
+const NUM_AGENTS = 3000;
 const MAX_NEIGHBOURS = 4;
-const MAX_LINE_POINTS = NUM_AGENTS*MAX_NEIGHBOURS;
+const MAX_LINE_POINTS = NUM_AGENTS;//*MAX_NEIGHBOURS;
+let lineidx = 0;
 
 const world = {
 	meters: [34976, 23376], // meters
@@ -103,6 +110,7 @@ const world = {
 
 	
 	agents_near: [],
+	agents_meta: [],
 };
 world.aspect = world.meters[0]/world.meters[1];
 world.size[0] = Math.floor(world.size[1] * world.aspect);
@@ -136,11 +144,18 @@ world.agents = agents;
 let fps = new utils.FPS();
 let running = true;
 let audioLoopSeconds = 2;
+let audioChannels = 8;
 
+// open a file for read/write & map to a Buffer
+let buf = mmapfile.openSync("audio/audiostate.bin", audioChannels*NUM_AGENTS*floatBytes, "r+");	
+let audiostate = new Float32Array(buf.buffer);
+console.log("audiostate.byteLength", audiostate.byteLength); // 8
+// console.log(buf.toString('ascii')); // "--------"
+// // write to it:
+// buf.fill('-');
+// console.log(buf.toString('ascii')); // "--------"
 
 function update() {
-	//requestAnimationFrame(update);
-	setTimeout(update, 1000/60);
 
 	let t = fps.t / audioLoopSeconds;
 
@@ -157,7 +172,6 @@ function update() {
 		let positions = agent_positions;
 		let colors = agent_colors;
 		let lines = agent_lines;
-		let linecount = 0;
 
 		for (let i=0; i<agents.length; i++) {
 			let a = agents[i];
@@ -178,15 +192,23 @@ function update() {
 			let search_radius = 25;
 			let near = world.agents_near[a.id];
 			space.searchUnique(a, search_radius, MAX_NEIGHBOURS, near);
-			if (linecount < MAX_LINE_POINTS) {
-				for (let n of near) {
-					lines[linecount++] = a.id;
-					lines[linecount++] = n.id;
-				}
+			for (let n of near) {
+				lines[lineidx++] = a.id;
+				lines[lineidx++] = n.id;
+				if (lineidx >= MAX_LINE_POINTS) lineidx = 0;
 			}
 			a.update(world, agents);
+
+			let sidx = a.id * audioChannels;
+			audiostate[sidx+0] = a.pos[0] / world.size[0];
+			audiostate[sidx+1] = a.pos[1] / world.size[1];
+			audiostate[sidx+2] = a.active;
+			audiostate[sidx+3] = a.meta.reward;
+			audiostate[sidx+4] = a.scent[0];
+			audiostate[sidx+5] = a.scent[1];
+			audiostate[sidx+6] = a.scent[2];
+			audiostate[sidx+7] = a.rate;
 		}
-		//linesVao.count = Math.min(MAX_LINE_POINTS, linecount);
 	}
 
 	fps.tick();
@@ -199,11 +221,14 @@ function update() {
 
 	//console.log(agentsBuffer.byteLength, utils.pick(agent_lines));
 	send_all_clients(agentsBuffer);
+
+	setTimeout(update, 1000/60);
 }
 
 for (let i=0; i<NUM_AGENTS; i++) {
 	let a = new Agent(i, world);
 	world.agents_near[i] = [];
+	world.agents_meta[i] = a.meta;
 	agents.push(a);
 	space.insertPoint(a);
 }
@@ -223,7 +248,11 @@ const wss = new WebSocket.Server({ server });
 // send a (string) message to all connected clients:
 function send_all_clients(msg) {
 	wss.clients.forEach(function each(client) {
-		client.send(msg);
+		try {
+			client.send(msg);
+		} catch (e) {
+			console.error(e);
+		};
 	});
 }
 
@@ -294,9 +323,13 @@ wss.on('connection', function(ws, req) {
 function handlemessage(msg, session) {
 	switch (msg.cmd) {
 		case "getagents": {
-			let data = JSON.stringify(agents);
-			//console.log(data)
-			session.send("hi")
+			try {
+				let data = JSON.stringify(world.agents_meta);
+				//console.log(data)
+				session.send(data)
+			} catch (e) {
+				console.error(e);
+			}
 		} break;
 		default: console.log("received JSON", msg, typeof msg);
 	}
