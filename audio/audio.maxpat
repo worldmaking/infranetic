@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 769.0, 78.0, 498.0, 336.0 ],
+		"rect" : [ 1256.0, 572.0, 498.0, 336.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -73,7 +73,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "float", "bang" ],
-					"patching_rect" : [ 334.0, 40.5, 105.0, 22.0 ],
+					"patching_rect" : [ 334.0, 40.5, 107.0, 22.0 ],
 					"text" : "buffer~ ola 2000 2"
 				}
 
@@ -91,13 +91,13 @@
 					"patching_rect" : [ 25.0, 217.0, 123.0, 47.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
+							"parameter_type" : 0,
+							"parameter_unitstyle" : 4,
 							"parameter_mmin" : -70.0,
 							"parameter_longname" : "live.gain~",
 							"parameter_mmax" : 6.0,
 							"parameter_initial" : [ 0.0 ],
-							"parameter_shortname" : "live.gain~",
-							"parameter_type" : 0,
-							"parameter_unitstyle" : 4
+							"parameter_shortname" : "live.gain~"
 						}
 
 					}
@@ -170,7 +170,7 @@
 						}
 ,
 						"classnamespace" : "dsp.gen",
-						"rect" : [ 675.0, 78.0, 551.0, 871.0 ],
+						"rect" : [ 675.0, 85.0, 551.0, 871.0 ],
 						"bglocked" : 0,
 						"openinpresentation" : 0,
 						"default_fontsize" : 12.0,
@@ -204,7 +204,7 @@
 									"numinlets" : 0,
 									"numoutlets" : 2,
 									"outlettype" : [ "", "" ],
-									"patching_rect" : [ 107.0, 6.0, 58.0, 22.0 ],
+									"patching_rect" : [ 107.0, 6.0, 60.0, 22.0 ],
 									"text" : "buffer ola"
 								}
 
@@ -238,16 +238,16 @@
 									"numinlets" : 0,
 									"numoutlets" : 2,
 									"outlettype" : [ "", "" ],
-									"patching_rect" : [ 20.0, 6.0, 68.0, 22.0 ],
+									"patching_rect" : [ 20.0, 6.0, 70.0, 22.0 ],
 									"text" : "buffer state"
 								}
 
 							}
 , 							{
 								"box" : 								{
-									"code" : "stateidx = counter(1, 0, dim(state));\r\nplay = counter(1, 0, dim(ola));\r\nfreq = 16;\r\ndensity = 16;\r\niot = samplerate/freq;\r\nspawn = change(train(iot)) == 1;\r\n// if time to trigger, write a new grain:\r\nif (spawn) {\r\n\t\r\n\tstart = ceil(play + mstosamps((1+noise()) * 100));\r\n\tlen = ceil(iot*density);\r\n\t\r\n\tx, y, active, reward, r, g, b, rate\r\n\t\t= peek(state, stateidx, 0, channels=8);\r\n\t\r\n\tgain = reward/sqrt(density);\r\n\tl = x; //abs(noise());\r\n\tr = 1-l;\r\n\tw_phase = 0;\r\n\ts_idx = floor(active*dim(src));\t\r\n\tfor (i=0; i<len; i+=1) {\r\n\t\ts = peek(src, s_idx, \r\n\t\t\tinterp=\"linear\", boundmode=\"wrap\");\r\n\t\ts *= gain * sample(win, i/len, \r\n\t\t\tinterp=\"linear\", boundmode=\"ignore\");\r\n\t\ts_idx += (r-g)*4;\r\n\t\t// overlap add:\r\n\t\tpoke(ola, s*l, start+i, 0, 1, \r\n\t\t\toverdubmode=\"accum\", boundmode=\"wrap\");\r\n\t\tpoke(ola, s*r, start+i, 1, 1, \r\n\t\t\toverdubmode=\"accum\", boundmode=\"wrap\");\n\t}\r\n}\r\n\r\n// zero out:\r\no1, o2 = peek(ola, play, channels=2);\r\nout1 = o1;\r\nout2 = o2;\r\npoke(ola, o1*0.5, play, 0);\r\npoke(ola, o2*0.5, play, 1);\r\n",
+									"code" : "stateidx = counter(1, 0, dim(state));\r\nplay = counter(1, 0, dim(ola));\r\nfreq = 16;\r\ndensity = 16;\r\niot = samplerate/freq;\r\nspawn = change(train(iot)) == 1;\r\n// if time to trigger, write a new grain:\r\nif (spawn) {\r\n\t\r\n\tstart = ceil(play + mstosamps((1+noise()) * 100));\r\n\tlen = ceil(iot*density);\r\n\t\r\n\tx, y, active, reward, r, g, b, rate\r\n\t\t= peek(state, stateidx, 0, channels=8);\r\n\t\r\n\tgain = 2.*reward/sqrt(density);\r\n\tl = x; //abs(noise());\r\n\tr = 1-l;\r\n\tw_phase = 0;\r\n\ts_idx = floor(active*dim(src));\t\r\n\tfor (i=0; i<len; i+=1) {\r\n\t\ts = peek(src, s_idx, \r\n\t\t\tinterp=\"linear\", boundmode=\"wrap\");\r\n\t\ts *= gain * sample(win, i/len, \r\n\t\t\tinterp=\"linear\", boundmode=\"ignore\");\r\n\t\ts_idx += (r-g)*4;\r\n\t\t// overlap add:\r\n\t\tpoke(ola, s*l, start+i, 0, 1, \r\n\t\t\toverdubmode=\"accum\", boundmode=\"wrap\");\r\n\t\tpoke(ola, s*r, start+i, 1, 1, \r\n\t\t\toverdubmode=\"accum\", boundmode=\"wrap\");\n\t}\r\n}\r\n\r\n// zero out:\r\no1, o2 = peek(ola, play, channels=2);\r\nout1 = o1;\r\nout2 = o2;\r\npoke(ola, o1*0.5, play, 0);\r\npoke(ola, o2*0.5, play, 1);\r\n",
 									"fontface" : 0,
-									"fontname" : "Menlo",
+									"fontname" : "<Monospaced>",
 									"fontsize" : 12.0,
 									"id" : "obj-7",
 									"maxclass" : "codebox",
@@ -471,8 +471,8 @@
 		}
 ,
 		"dependency_cache" : [ 			{
-				"name" : "bin2buf~.mxo",
-				"type" : "iLaX"
+				"name" : "bin2buf~.mxe64",
+				"type" : "mx64"
 			}
  ],
 		"autosave" : 0
