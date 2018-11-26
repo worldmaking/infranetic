@@ -56,8 +56,8 @@ const grid = {
 	cols: 11, 
 	rows: 5,
 	cellcount: 144,
-	colsize: 175,
-	rowsize: 190,
+	colsize: 170,
+	rowsize: 205,
 
 	ids: []
 };
@@ -514,7 +514,7 @@ function update() {
 	ctx.font = fontsize + 'px monospace';
 	ctx.textBaseline = "top"
 	ctx.textAlign = "left"
-	ctx.fillStyle = "#555"
+	ctx.fillStyle = "#888"
 	for (let y=0; y<grid.rows; y++) {
 		for (let x=0; x<grid.cols; x++, i++) {
 			let id = grid.ids[i];
