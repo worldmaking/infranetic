@@ -122,6 +122,7 @@ void main() {
 gl.useProgram(program_showtex);
 gl.uniform1i(gl.getUniformLocation(program_showtex, "u_tex0"), 0);
 gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), 1, 1, 1, 0.02);
+let glQuad = createQuadVao(gl, program_showtex);
 
 let slab_composite_invert = 0;
 let slab_composite = createSlab(gl, `#version 300 es
@@ -191,8 +192,6 @@ void main() {
 })
 
 
-
-let glQuad = createQuadVao(gl, program_showtex);
 
 
 let agentsVao = {
@@ -489,8 +488,6 @@ function update() {
 	slab_composite.use();
 	slab_composite.uniform("u_invert", slab_composite_invert);
 	slab_composite.uniform("u_showmap", showmap ? 0.25 : 0);
-	let aspect = (1920/1080)/(world.size[0]/world.size[1]);
-	slab_composite.uniform("u_aspect", aspect);
 	slab_composite.draw();
 
 	// fbo.bind().readPixels(); // SLOW!!!
