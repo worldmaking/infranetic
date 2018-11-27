@@ -34,7 +34,7 @@
                 } else {
                     this.agent = Math.floor(Math.random()*world.agents.length);
                 }
-                this.zoom = 2;
+                this.zoom = 1;
             } 
 
             let a = world.agents[this.agent];
