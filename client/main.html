@@ -75,6 +75,11 @@ canvas {
 <script src="libs/socket.js"></script>
 <script src="libs/webutils.js"></script>
 <script src="libs/glutils.js"></script>
+<script>
+if (getQueryStringParamterByName("mouse") == "0" || getQueryStringParamterByName("mouse") == "off") {
+    makeStyleSheet("* { cursor: none; }");
+}
+</script>
 <script src="main.js"></script>
 </body>
 </html>

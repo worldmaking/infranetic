@@ -102,20 +102,34 @@ class ArrayFromImg {
 	}
 };
 
+function getQueryStringParamterByName(name, url) {
+    if (!url) url = window.location.href;
+    name = name.replace(/[\[\]]/g, '\\$&');
+    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, ' '));
+}
 
-function makeStyleSheet() {
+function makeStyleSheet(css) {
 	// Create the <style> tag
-	var style = document.createElement("style");
+	var styleNode = document.createElement("style");
+	styleNode.type = "text/css";
+	// WebKit hack :(
+	styleNode.appendChild(document.createTextNode(""));
 
 	// Add a media (and/or media query) here if you'd like!
-	// style.setAttribute("media", "screen")
-	// style.setAttribute("media", "only screen and (max-width : 1024px)")
+	// styleNode.setAttribute("media", "screen")
+	// styleNode.setAttribute("media", "only screen and (max-width : 1024px)")
 
-	// WebKit hack :(
-	style.appendChild(document.createTextNode(""));
+	if (css) {
+		//styleNode.styleSheet.cssText = ;
+		styleNode.appendChild(document.createTextNode(css));
+	}
 
 	// Add the <style> element to the page
-	document.head.appendChild(style);
+	document.head.appendChild(styleNode);
 
-	return style.sheet;
+	return styleNode.sheet;
 };
