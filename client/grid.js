@@ -494,7 +494,7 @@ function update() {
 	ctx.font = fontsize + 'px monospace';
 	ctx.textBaseline = "top"
 	ctx.textAlign = "left"
-	ctx.fillStyle = slab_composite_invert ? "#888" : "#444";
+	ctx.fillStyle = slab_composite_invert ? "#666" : "#666";
 
 	if (grid) {
 		let mapbox = Math.floor(grid_colsize*3/4);
@@ -521,6 +521,7 @@ function update() {
 						px, py, mapbox, mapbox);
 				}
 			
+				ctx.fillStyle = slab_composite_invert ? "#444" : "#888";
 				ctx.fillText(watcher.labels[0],  px, py+mapbox + fontsize*0);
 				ctx.fillText(watcher.labels[1], px, py+mapbox + fontsize*1);
 				ctx.fillText(watcher.labels[2], px, py+mapbox + fontsize*2);
