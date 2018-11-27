@@ -41,9 +41,16 @@
             vec2.lerp(this.pos, this.pos, a.pos, 0.05);
             //cell.zoom += 0.002*(Math.pow(a.reward,4) - cell.zoom);
             this.reward = a.meta.reward;
+
+            let kmx = (this.pos[0]*world.tokm);
+            let kmy = (this.pos[1]*world.tokm);
+            let nx = Math.floor(100*this.pos[0]/world.size[0]);
+            let ny = Math.floor(100*this.pos[1]/world.size[1]);
+            let zz = ((this.zoom * 127.5) * world.meters_per_pixel); 
+
             this.labels[0] = a.meta.birthdata;
-            this.labels[1] = `${(this.pos[0]*world.tokm).toFixed(1)},${(this.pos[0]*world.tokm).toFixed(1)}km (${Math.floor(100*this.pos[0]/world.size[0])},${Math.floor(100*this.pos[0]/world.size[1])})`
-            this.labels[2] = `${a.meta.reward.toFixed(3)}`;
+            this.labels[1] = `${kmx.toFixed(1)},${kmy.toFixed(1)}km (${nx},${ny})`
+            this.labels[2] = `${a.meta.reward.toFixed(3)} ±${Math.floor(zz)}m`;
         }
     };
 

@@ -521,10 +521,13 @@ function update() {
 						px, py, mapbox, mapbox);
 				}
 			
-				ctx.fillStyle = slab_composite_invert ? "#444" : "#888";
-				ctx.fillText(watcher.labels[0],  px, py+mapbox + 4 + fontsize*0);
-				ctx.fillText(watcher.labels[1], px, py+mapbox + 4 + fontsize*1);
-				ctx.fillText(watcher.labels[2], px, py+mapbox + 4 + fontsize*2);
+				ctx.fillStyle = slab_composite_invert ? "#666" : "#666";
+				let ty = py+mapbox + 3;
+				ctx.fillText(watcher.labels[0],  px, ty);
+				ty += fontsize;
+				ctx.fillText(watcher.labels[1], px, ty);
+				ty += fontsize;
+				ctx.fillText(watcher.labels[2], px, ty);
 
 			}
 		}
