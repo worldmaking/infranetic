@@ -96,6 +96,79 @@ function resize() {
 
 let fbo = createFBO(gl, gl.canvas.width, gl.canvas.height, true);
 
+let slab_blur = createSlab(gl, `#version 300 es
+precision mediump float;
+uniform sampler2D u_tex0;
+uniform sampler2D u_tex1;
+uniform float u_fade;
+uniform vec2 u_resolution;
+in vec2 v_texCoord;
+out vec4 outColor;
+float normpdf(in float x, in float sigma){
+	return 0.39894*exp(-0.5*x*x/(sigma*sigma))/sigma;
+}
+void main() {
+	vec2 uv = v_texCoord;
+	vec4 tex0 = texture(u_tex0, uv);
+	vec4 tex1 = texture(u_tex1, uv);
+
+	vec3 c = tex0.rgb;
+	//declare stuff
+	const int mSize = 11;
+	const int kSize = (mSize-1)/2;
+	float kernel[mSize];
+	vec3 final_colour = vec3(0.0);
+	
+	//create the 1-D kernel
+	float sigma = 7.0;
+	float Z = 0.0;
+	for (int j = 0; j <= kSize; ++j) {
+		kernel[kSize+j] = kernel[kSize-j] = normpdf(float(j), sigma);
+	}
+	//get the normalization factor (as the gaussian has been clamped)
+	for (int j = 0; j < mSize; ++j) {
+		Z += kernel[j];
+	}
+	
+	//read out the texels
+	for (int i=-kSize; i <= kSize; ++i) {
+		for (int j=-kSize; j <= kSize; ++j) {
+			final_colour += kernel[kSize+j]*kernel[kSize+i]*texture(u_tex0, uv+(vec2(float(i),float(j))) / u_resolution.xy).rgb;
+		}
+	}
+
+	c = final_colour/(Z*Z);
+
+	outColor.rgb = c*u_fade + tex1.rgb;
+	outColor.a = 1.;
+}`,{
+	u_tex0: [0],
+	u_tex1: [1],
+	u_fade: [0.7],
+	u_resolution: [gl.canvas.width, gl.canvas.height],
+});
+
+let syncfbo = createFBO(gl, gl.canvas.width, gl.canvas.height, true);
+let slab_sync = createSlab(gl, `#version 300 es
+precision mediump float;
+uniform sampler2D u_tex0;
+uniform sampler2D u_tex1;
+uniform float u_fade;
+in vec2 v_texCoord;
+out vec4 outColor;
+void main() {
+	vec4 tex0 = texture(u_tex0, v_texCoord);
+	vec4 tex1 = texture(u_tex1, v_texCoord);
+	outColor.rgb = tex0.rgb * (u_fade) + tex1.rgb;
+	outColor.a = 1.;
+
+}
+`,{
+	"u_tex0": [0],
+	"u_tex1": [1],
+	"u_fade": [0.99],
+});
+
 let trailfbo = createFBO(gl, gl.canvas.width, gl.canvas.height, true);
 let slab_trail = createSlab(gl, `#version 300 es
 precision mediump float;
@@ -118,26 +191,6 @@ void main() {
 	"u_fade": [0.99],
 });
 
-let syncfbo = createFBO(gl, gl.canvas.width, gl.canvas.height, true);
-let slab_sync = createSlab(gl, `#version 300 es
-precision mediump float;
-uniform sampler2D u_tex0;
-uniform sampler2D u_tex1;
-uniform float u_fade;
-in vec2 v_texCoord;
-out vec4 outColor;
-void main() {
-	vec4 tex0 = texture(u_tex0, v_texCoord);
-	vec4 tex1 = texture(u_tex1, v_texCoord);
-	outColor.rgb = tex0.rgb * (u_fade) + tex1.rgb;
-	outColor.a = 1.;
-	//float avg = (outColor.r + outColor.g + outColor.b) * 0.333;
-}
-`,{
-	"u_tex0": [0],
-	"u_tex1": [1],
-	"u_fade": [0.99],
-});
 
 let program_showtex = makeProgramFromCode(gl,
 `#version 300 es
@@ -226,6 +279,8 @@ void main() {
 	outColor.rgb *= areacolors.a;
 	outColor.rgb = mix(outColor.rgb, 1.-outColor.rgb, u_invert);
 	outColor.a = 1.;
+
+	//outColor = sync;
 
 }
 `,{
@@ -519,7 +574,7 @@ function update() {
 		{
 			fbo.front.bind(1);
 			trailfbo.front.bind(0);
-			let a = 0.993; //0.995;
+			let a = 0.997; //0.995;
 			slab_trail.use();
 			slab_trail.uniform("u_fade", a);
 			slab_trail.draw();
@@ -529,17 +584,11 @@ function update() {
 		// feed into sync lighting:
 		syncfbo.begin().clear();
 		{
-			// gl.lineWidth(0.1);
-			// gl.enable(gl.BLEND);
-			// //gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-			// gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-			// // feedback:
-			fbo.front.bind(1);
 			syncfbo.front.bind(0);
-			let a = 0.7; //0.995;
-			slab_sync.use();
-			slab_sync.uniform("u_fade", a);
+			fbo.front.bind(1);
+			//slab_blur.use().uniform("u_fade", 0.7);
+			//slab_blur.draw();
+			slab_sync.use().uniform("u_fade", 0.7);
 			slab_sync.draw();
 		}
 		syncfbo.end(); 

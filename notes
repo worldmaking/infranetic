@@ -11,6 +11,8 @@ using a slightly better sampler kernel in slab_composite helped a little
 
 could point sprites help?
 
+render at HD instead of 4k?
+
 OK so our composite needs to be able to balance the appearance of these things:
 - the long-term trails left by agents
 - the immediate pulsing of agents
