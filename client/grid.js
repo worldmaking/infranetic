@@ -512,10 +512,10 @@ function update() {
 				let px = grid_colsize*(x + 1/4);
 				let py = grid_rowsize*(y + 1/4);
 
-				ctx.fillStyle = slab_composite_invert ? "white" : "black";
-				ctx.fillRect(px, py, mapbox, mapbox);
 				
 				if (watcher.reward > 0.15) {
+					ctx.fillStyle = slab_composite_invert ? "white" : "black";
+					ctx.fillRect(px, py, mapbox, mapbox);
 					ctx.drawImage(gl.canvas, 
 						ax-glw, ay-glw, glw2, glw2,
 						px, py, mapbox, mapbox);
