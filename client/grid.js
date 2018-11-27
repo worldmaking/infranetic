@@ -502,7 +502,6 @@ function update() {
 		for (let y=0; y<grid.rows; y++) {
 			for (let x=0; x<grid.cols; x++, i++) {
 				let watcher = grid.watchers[i];
-				if (watcher.reward < 0.15) continue;
 
 				let ax = watcher.pos[0];
 				let ay = watcher.pos[1];
@@ -515,9 +514,12 @@ function update() {
 
 				ctx.fillStyle = slab_composite_invert ? "white" : "black";
 				ctx.fillRect(px, py, mapbox, mapbox);
-				ctx.drawImage(gl.canvas, 
-					ax-glw, ay-glw, glw2, glw2,
-					px, py, mapbox, mapbox);
+				
+				if (watcher.reward > 0.15) {
+					ctx.drawImage(gl.canvas, 
+						ax-glw, ay-glw, glw2, glw2,
+						px, py, mapbox, mapbox);
+				}
 			
 				ctx.fillText(watcher.labels[0],  px, py+mapbox + fontsize*0);
 				ctx.fillText(watcher.labels[1], px, py+mapbox + fontsize*1);

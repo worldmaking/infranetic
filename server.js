@@ -12,7 +12,6 @@ const WebSocket = require('ws');
 const PNG = require("pngjs").PNG;
 const { vec2, vec3 } = require("gl-matrix");
 
-//module.paths.push("./tmp")
 const mmapfile = require('./libs/mmapfile');
 
 const utils = require("./libs/utils.js");
