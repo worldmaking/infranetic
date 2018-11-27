@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 872.0, 414.0, 511.0, 336.0 ],
+		"rect" : [ 903.0, 142.0, 645.0, 579.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -39,6 +39,142 @@
 		"subpatcher_template" : "",
 		"boxes" : [ 			{
 				"box" : 				{
+					"autosave" : 1,
+					"bgmode" : 1,
+					"border" : 0,
+					"clickthrough" : 0,
+					"enablehscroll" : 0,
+					"enablevscroll" : 0,
+					"id" : "obj-14",
+					"lockeddragscroll" : 0,
+					"maxclass" : "newobj",
+					"numinlets" : 3,
+					"numoutlets" : 4,
+					"offset" : [ 0.0, 0.0 ],
+					"outlettype" : [ "signal", "signal", "", "" ],
+					"patching_rect" : [ 25.0, 222.0, 577.0, 196.0 ],
+					"saved_attribute_attributes" : 					{
+						"valueof" : 						{
+							"parameter_invisible" : 1,
+							"parameter_longname" : "amxd~",
+							"parameter_shortname" : "amxd~",
+							"parameter_type" : 3
+						}
+
+					}
+,
+					"saved_object_attributes" : 					{
+						"parameter_enable" : 1,
+						"patchername" : "Max EqParametric4.amxd",
+						"patchername_fallback" : "C74:/packages/Max for Live/patchers/Max Audio Effect/Max EqParametric4/Max EqParametric4.amxd"
+					}
+,
+					"snapshot" : 					{
+						"filetype" : "C74Snapshot",
+						"version" : 2,
+						"minorversion" : 0,
+						"name" : "snapshotlist",
+						"origin" : "max~",
+						"type" : "list",
+						"subtype" : "Undefined",
+						"embed" : 1,
+						"snapshot" : 						{
+							"name" : "Max EqParametric4.amxd",
+							"origname" : "C74:/packages/Max for Live/patchers/Max Audio Effect/Max EqParametric4/Max EqParametric4.amxd",
+							"valuedictionary" : 							{
+								"parameter_values" : 								{
+									"Active[1]" : 1.0,
+									"Active[2]" : 1.0,
+									"Active[3]" : 1.0,
+									"Active[4]" : 1.0,
+									"Freq[1]" : 4546.408489643978101,
+									"Freq[2]" : 7590.38304835449344,
+									"Freq[3]" : 10170.486501365670847,
+									"Freq[4]" : 13306.442163870837248,
+									"Gain[1]" : -19.961110915828719,
+									"Gain[2]" : -19.961110915828719,
+									"Gain[3]" : -19.961110915828719,
+									"Gain[4]" : -19.961110915828719,
+									"MasterGain" : -3.937007874015748,
+									"Q[1]" : 5.089929702831586,
+									"Q[2]" : 5.089929702831586,
+									"Q[3]" : 5.089929702831586,
+									"Q[4]" : 5.089929702831586,
+									"Type[1]" : 5.0,
+									"Type[2]" : 4.0,
+									"Type[3]" : 4.0,
+									"Type[4]" : 6.0
+								}
+
+							}
+
+						}
+,
+						"snapshotlist" : 						{
+							"current_snapshot" : 0,
+							"entries" : [ 								{
+									"filetype" : "C74Snapshot",
+									"version" : 2,
+									"minorversion" : 0,
+									"name" : "Max EqParametric4.amxd",
+									"origin" : "Max EqParametric4.amxd",
+									"type" : "amxd",
+									"subtype" : "Undefined",
+									"embed" : 0,
+									"snapshot" : 									{
+										"name" : "Max EqParametric4.amxd",
+										"origname" : "C74:/packages/Max for Live/patchers/Max Audio Effect/Max EqParametric4/Max EqParametric4.amxd",
+										"valuedictionary" : 										{
+											"parameter_values" : 											{
+												"Active[1]" : 1.0,
+												"Active[2]" : 1.0,
+												"Active[3]" : 1.0,
+												"Active[4]" : 1.0,
+												"Freq[1]" : 4546.408489643978101,
+												"Freq[2]" : 7590.38304835449344,
+												"Freq[3]" : 10170.486501365670847,
+												"Freq[4]" : 13306.442163870837248,
+												"Gain[1]" : -19.961110915828719,
+												"Gain[2]" : -19.961110915828719,
+												"Gain[3]" : -19.961110915828719,
+												"Gain[4]" : -19.961110915828719,
+												"MasterGain" : -3.937007874015748,
+												"Q[1]" : 5.089929702831586,
+												"Q[2]" : 5.089929702831586,
+												"Q[3]" : 5.089929702831586,
+												"Q[4]" : 5.089929702831586,
+												"Type[1]" : 5.0,
+												"Type[2]" : 4.0,
+												"Type[3]" : 4.0,
+												"Type[4]" : 6.0
+											}
+
+										}
+
+									}
+,
+									"fileref" : 									{
+										"name" : "Max EqParametric4.amxd",
+										"filename" : "Max EqParametric4.amxd.maxsnap",
+										"filepath" : "~/Documents/Max 8/Snapshots",
+										"filepos" : -1,
+										"snapshotfileid" : "bd54709c6dff229d6ff38a5598908c12"
+									}
+
+								}
+ ]
+						}
+
+					}
+,
+					"text" : "amxd~ \"Max EqParametric4.amxd\"",
+					"varname" : "amxd~",
+					"viewvisibility" : 1
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"buffername" : "ola",
 					"chanoffset" : 2,
 					"id" : "obj-13",
@@ -47,7 +183,7 @@
 					"numinlets" : 5,
 					"numoutlets" : 6,
 					"outlettype" : [ "float", "float", "float", "float", "list", "" ],
-					"patching_rect" : [ 334.0, 188.5, 144.0, 113.0 ],
+					"patching_rect" : [ 458.0, 64.0, 144.0, 113.0 ],
 					"ruler" : 0
 				}
 
@@ -61,7 +197,7 @@
 					"numinlets" : 5,
 					"numoutlets" : 6,
 					"outlettype" : [ "float", "float", "float", "float", "list", "" ],
-					"patching_rect" : [ 334.0, 68.5, 144.0, 113.0 ],
+					"patching_rect" : [ 305.0, 64.0, 144.0, 113.0 ],
 					"ruler" : 0
 				}
 
@@ -73,7 +209,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "float", "bang" ],
-					"patching_rect" : [ 334.0, 40.5, 107.0, 22.0 ],
+					"patching_rect" : [ 305.0, 36.0, 107.0, 22.0 ],
 					"text" : "buffer~ ola 2000 2"
 				}
 
@@ -88,7 +224,7 @@
 					"orientation" : 1,
 					"outlettype" : [ "signal", "signal", "", "float", "list" ],
 					"parameter_enable" : 1,
-					"patching_rect" : [ 25.0, 209.0, 123.0, 47.0 ],
+					"patching_rect" : [ 25.0, 426.0, 123.0, 47.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
 							"parameter_type" : 0,
@@ -114,7 +250,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "bang" ],
-					"patching_rect" : [ 172.0, 176.5, 60.0, 22.0 ],
+					"patching_rect" : [ 172.0, 126.5, 60.0, 22.0 ],
 					"text" : "loadbang"
 				}
 
@@ -126,7 +262,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 172.0, 205.0, 113.0, 22.0 ],
+					"patching_rect" : [ 172.0, 155.0, 113.0, 22.0 ],
 					"text" : "fill 1, apply hanning"
 				}
 
@@ -138,7 +274,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "float", "bang" ],
-					"patching_rect" : [ 172.0, 234.0, 150.0, 22.0 ],
+					"patching_rect" : [ 172.0, 184.0, 150.0, 22.0 ],
 					"text" : "buffer~ win @samps 4096"
 				}
 
@@ -149,7 +285,7 @@
 					"maxclass" : "ezdac~",
 					"numinlets" : 2,
 					"numoutlets" : 0,
-					"patching_rect" : [ 25.0, 283.0, 45.0, 45.0 ]
+					"patching_rect" : [ 25.0, 500.0, 45.0, 45.0 ]
 				}
 
 			}
@@ -302,7 +438,7 @@
 						"editing_bgcolor" : [ 0.9, 0.9, 0.9, 1.0 ]
 					}
 ,
-					"patching_rect" : [ 25.0, 176.5, 123.0, 22.0 ],
+					"patching_rect" : [ 25.0, 184.0, 123.0, 22.0 ],
 					"text" : "gen~"
 				}
 
@@ -314,7 +450,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "float", "bang" ],
-					"patching_rect" : [ 334.0, 12.0, 114.0, 22.0 ],
+					"patching_rect" : [ 305.0, 7.5, 114.0, 22.0 ],
 					"text" : "buffer~ src mix.mp3"
 				}
 
@@ -326,7 +462,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 83.0, 283.0, 70.0, 22.0 ],
+					"patching_rect" : [ 83.0, 500.0, 70.0, 22.0 ],
 					"text" : "loadmess 1"
 				}
 
@@ -408,6 +544,20 @@
 			}
 , 			{
 				"patchline" : 				{
+					"destination" : [ "obj-89", 1 ],
+					"source" : [ "obj-14", 1 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-89", 0 ],
+					"source" : [ "obj-14", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
 					"destination" : [ "obj-6", 0 ],
 					"source" : [ "obj-17", 0 ]
 				}
@@ -415,14 +565,14 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-89", 1 ],
+					"destination" : [ "obj-14", 1 ],
 					"source" : [ "obj-19", 1 ]
 				}
 
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-89", 0 ],
+					"destination" : [ "obj-14", 0 ],
 					"source" : [ "obj-19", 0 ]
 				}
 
@@ -465,6 +615,7 @@
  ],
 		"parameters" : 		{
 			"obj-89" : [ "live.gain~", "live.gain~", 0 ],
+			"obj-14" : [ "amxd~", "amxd~", 0 ],
 			"parameterbanks" : 			{
 
 			}
@@ -472,6 +623,12 @@
 		}
 ,
 		"dependency_cache" : [ 			{
+				"name" : "Max EqParametric4.amxd.maxsnap",
+				"bootpath" : "~/Documents/Max 8/Snapshots",
+				"type" : "mx@s",
+				"implicit" : 1
+			}
+, 			{
 				"name" : "bin2buf~.mxe64",
 				"type" : "mx64"
 			}

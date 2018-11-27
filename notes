@@ -2,6 +2,8 @@
 show data graph
 - maybe history, replacing 1 box every day or so with a summary
 
+normalize position is weird
+
 ----
 
 
@@ -30,7 +32,6 @@ Currently share network & color
 - or also share resources (and need to maintain a minimum?)
 
 complete surveillance
-- when box is gone, leave the text on screen
 
 make children size/speed different?
 
