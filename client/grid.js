@@ -522,9 +522,9 @@ function update() {
 				}
 			
 				ctx.fillStyle = slab_composite_invert ? "#444" : "#888";
-				ctx.fillText(watcher.labels[0],  px, py+mapbox + fontsize*0);
-				ctx.fillText(watcher.labels[1], px, py+mapbox + fontsize*1);
-				ctx.fillText(watcher.labels[2], px, py+mapbox + fontsize*2);
+				ctx.fillText(watcher.labels[0],  px, py+mapbox + 4 + fontsize*0);
+				ctx.fillText(watcher.labels[1], px, py+mapbox + 4 + fontsize*1);
+				ctx.fillText(watcher.labels[2], px, py+mapbox + 4 + fontsize*2);
 
 			}
 		}
