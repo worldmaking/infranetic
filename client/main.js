@@ -127,9 +127,9 @@ uniform float u_fade;
 in vec2 v_texCoord;
 out vec4 outColor;
 void main() {
-	vec3 tex0 = texture(u_tex0, v_texCoord).rgb;
-	vec3 tex1 = texture(u_tex1, v_texCoord).rgb;
-	outColor.rgb = tex0.rgb * u_fade + tex1.rgb;
+	vec4 tex0 = texture(u_tex0, v_texCoord);
+	vec4 tex1 = texture(u_tex1, v_texCoord);
+	outColor.rgb = tex0.rgb * (u_fade) + tex1.rgb;
 	outColor.a = 1.;
 	//float avg = (outColor.r + outColor.g + outColor.b) * 0.333;
 }
@@ -212,19 +212,12 @@ void main() {
 
 	vec4 areacolors = texture(u_areas, uv1);
 
-
-	// vec4 image = texture(u_image, uv);
-	// vec4 image1 = texture(u_image, uv+vec2(onePixel.x, 0.));
-	// vec4 image2 = texture(u_image, uv+vec2(0., onePixel.y));
-	// vec4 image3 = texture(u_image, uv+vec2(onePixel.x, onePixel.y));
-
-	// image = mix((image + image1 + image2 + image3) / 4., image, u_sharpness);
-
-	// outColor = image;
-
 	vec4 agents = texture(u_agents, uv);
 	vec4 sync = blurred(u_sync, uv); //texture(u_sync, uv);
-	vec4 trails = texture(u_trails, uv) * 0.2;
+	vec4 trails = texture(u_trails, uv);
+
+	float trailsgamma = 1.2;
+	trails.rgb = pow(trails.rgb, vec3(1.0/trailsgamma)) * 0.25;
 
 	outColor.rgb = agents.rgb + trails.rgb + sync.rgb;
 
@@ -464,7 +457,7 @@ in vec4 color;
 out vec4 outColor;
 void main() {
 	vec3 c = mix(color.rgb, vec3(1.), 0.9);
-	outColor = vec4(c, color.a * 0.03);
+	outColor = vec4(c, color.a * 0.1);
 	//outColor = vec4(color.a * 0.5);
 }
 `);

@@ -22,6 +22,8 @@ now separated into different fbos so we can tune more easily:
 - syncfbo captures short term, to emphasize pulsing (add blur?)
 - trailsfbo does long-term feedback
 
+TODO: put lines into a separate fbo so we can once-only them
+
 slab_composite takes care of blending them.
 
 if we captured the new agents data into a separate fbo, those could feed into 
