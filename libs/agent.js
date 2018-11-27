@@ -80,7 +80,7 @@
             if (name.length == 0) name = "Z";
 
             let d = new Date();
-            this.meta.birthdata = `${d.getMonth()+1}${d.getDate()}_${d.getHours()}:${d.getMinutes()}_${name}`;
+            this.meta.birthdata = `${(d.getMonth()+1)}${(d.getDate().toString().padStart(2, '0'))}_${(d.getHours()).toString().padStart(2, '0')}:${(d.getMinutes()).toString().padStart(2, '0')}_${name}`;
 
         }
 

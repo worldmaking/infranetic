@@ -19,27 +19,39 @@
             this.row = Math.floor(i / grid.cols);
             this.agent = Math.floor(Math.random()*world.agents.length);
             this.zoom = Math.random();
+            this.reward = Math.random();
+            this.difference = Math.random();
             this.pos = [0, 0];
             this.labels = [];
         }
 
         update(world, fps) {
             this.zoom -= fps.dt * 0.01;
-            if (this.zoom <= 0.05) {
 
-                // switch attention
-                let near = world.agents_near[this.agent];
-                if (near.length > 0) {
-                    this.agent = near[Math.floor(Math.random()*near.length)].id;
-                } else {
-                    this.agent = Math.floor(Math.random()*world.agents.length);
-                }
+            // switch attention
+            if (this.zoom <= 0.04) {
+                this.agent = Math.floor(Math.random()*world.agents.length);
                 this.zoom = 1;
-            } 
+            } else {
+                let near = world.agents_near[this.agent];
+                let self = world.agents[this.agent];
+                if (near.length > 0) {
+                    let n = near[Math.floor(Math.random()*near.length)];
+                    // CHOOSE A MORE INTERESTING NEIGHBOUR TO FOLLOW?
+                    let difference = vec3.angle(self.scent, n.scent);
+
+                    // difference as a measure of discovery
+                    this.diff = difference;
+
+                    if (Math.random() < (this.zoom * difference * (n.active - self.active))) {
+                        this.agent = n.id;
+                    }
+                }
+            }
 
             let a = world.agents[this.agent];
-            vec2.lerp(this.pos, this.pos, a.pos, 0.05);
-            //cell.zoom += 0.002*(Math.pow(a.reward,4) - cell.zoom);
+            vec2.lerp(this.pos, a.pos, this.pos, 1-0.1*(1-this.zoom));
+            
             this.reward = a.meta.reward;
 
             let kmx = (this.pos[0]*world.tokm);
@@ -50,7 +62,7 @@
 
             this.labels[0] = a.meta.birthdata;
             this.labels[1] = `${kmx.toFixed(1)},${kmy.toFixed(1)}km (${nx},${ny})`
-            this.labels[2] = `${a.meta.reward.toFixed(3)} ±${Math.floor(zz)}m`;
+            this.labels[2] = `${a.meta.reward.toFixed(3)} ${this.difference.toFixed(3)} ±${Math.floor(zz)}m`;
         }
     };
 
