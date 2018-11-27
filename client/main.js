@@ -48,6 +48,7 @@ let running = true;
 
 let showlines = false;
 let showmap = false;
+let sharpness = 0.5;
 
 canvas.width = world.size[0];
 canvas.height = world.size[1]; 
@@ -95,6 +96,49 @@ function resize() {
 
 let fbo = createFBO(gl, gl.canvas.width, gl.canvas.height, true);
 
+let trailfbo = createFBO(gl, gl.canvas.width, gl.canvas.height, true);
+let slab_trail = createSlab(gl, `#version 300 es
+precision mediump float;
+uniform sampler2D u_tex0;
+uniform sampler2D u_tex1;
+uniform float u_fade;
+in vec2 v_texCoord;
+out vec4 outColor;
+void main() {
+	vec3 tex0 = texture(u_tex0, v_texCoord).rgb;
+	vec3 tex1 = texture(u_tex1, v_texCoord).rgb;
+	float avg = length(tex0.r + tex0.g + tex0.b)/3.;
+	vec3 col = mix(vec3(avg), tex0.rgb, 0.99);
+	outColor.rgb = col*u_fade + tex1.rgb;
+	outColor.a = 1.;
+}
+`,{
+	"u_tex0": [0],
+	"u_tex1": [1],
+	"u_fade": [0.99],
+});
+
+let syncfbo = createFBO(gl, gl.canvas.width, gl.canvas.height, true);
+let slab_sync = createSlab(gl, `#version 300 es
+precision mediump float;
+uniform sampler2D u_tex0;
+uniform sampler2D u_tex1;
+uniform float u_fade;
+in vec2 v_texCoord;
+out vec4 outColor;
+void main() {
+	vec3 tex0 = texture(u_tex0, v_texCoord).rgb;
+	vec3 tex1 = texture(u_tex1, v_texCoord).rgb;
+	outColor.rgb = tex0.rgb * u_fade + tex1.rgb;
+	outColor.a = 1.;
+	//float avg = (outColor.r + outColor.g + outColor.b) * 0.333;
+}
+`,{
+	"u_tex0": [0],
+	"u_tex1": [1],
+	"u_fade": [0.99],
+});
+
 let program_showtex = makeProgramFromCode(gl,
 `#version 300 es
 in vec4 a_position;
@@ -127,66 +171,80 @@ let glQuad = createQuadVao(gl, program_showtex);
 let slab_composite_invert = 0;
 let slab_composite = createSlab(gl, `#version 300 es
 precision highp float;
-uniform sampler2D u_image;
-uniform sampler2D u_data;
-uniform sampler2D u_map;
+
+uniform sampler2D u_agents;
+uniform sampler2D u_sync;
+uniform sampler2D u_trails;
 uniform sampler2D u_areas;
+
+// uniform sampler2D u_image;
+// uniform sampler2D u_data;
+// uniform sampler2D u_map;
 uniform vec4 u_color;
 uniform float u_invert;
 uniform float u_showmap;
 uniform float u_border;
 uniform float u_aspect;
+uniform float u_sharpness;
 in vec2 v_texCoord;
 out vec4 outColor;
-void main() {
 
-
-	vec2 uv = (v_texCoord.xy*2.-1.) * (1. + u_border*2.) * vec2(u_aspect, 1.) * 0.5 + 0.5;
-	vec2 uv1 = vec2(uv.x, 1.-uv.y);
-
-	vec4 data = texture(u_data, uv1);
-	float ways = data.r;
-	float altitude = data.g;
-	float areas = data.b;
-	float marks = data.a;
-
-	vec4 areacolors = texture(u_areas, uv1);
-
+vec4 blurred(sampler2D img, vec2 uv) {
 	vec2 texSize = vec2(3231, 2160);
 	vec2 onePixel = vec2(1.0, 1.0) / texSize;
 
-	vec4 image = texture(u_image, uv);
-	vec4 image1 = texture(u_image, uv+vec2(onePixel.x, 0.));
-	vec4 image2 = texture(u_image, uv+vec2(0., onePixel.y));
-	vec4 image3 = texture(u_image, uv+vec2(onePixel.x, onePixel.y));
+	vec4 image0 = texture(img, uv);
+	vec4 image1 = texture(img, uv+vec2(onePixel.x, 0.));
+	vec4 image2 = texture(img, uv+vec2(0., onePixel.y));
+	vec4 image3 = texture(img, uv+vec2(onePixel.x, onePixel.y));
+	return mix((image0 + image1 + image2 + image3) / 4., image0, u_sharpness);
+}
 
-	image = mix(image, (image + image1 + image2 + image3) / 4., 0.2);
+void main() {
+	vec2 uv = (v_texCoord.xy*2.-1.) * (1. + u_border*2.) * vec2(u_aspect, 1.) * 0.5 + 0.5;
+	vec2 uv1 = vec2(uv.x, 1.-uv.y);
 
-	outColor = image;// * u_color;
-	//outColor.rgb += vec3(ways) * 0.15;
-	//outColor.r += float(marks) * 0.5;
+	// vec4 data = texture(u_data, uv1);
+	// float ways = data.r;
+	// float altitude = data.g;
+	// float areas = data.b;
+	// float marks = data.a;
 
-	//outColor.rgb = 1.-outColor.rgb;
+	vec4 areacolors = texture(u_areas, uv1);
 
-	outColor += texture(u_map, uv) * u_showmap;
 
-	float gamma = 1.5;
+	// vec4 image = texture(u_image, uv);
+	// vec4 image1 = texture(u_image, uv+vec2(onePixel.x, 0.));
+	// vec4 image2 = texture(u_image, uv+vec2(0., onePixel.y));
+	// vec4 image3 = texture(u_image, uv+vec2(onePixel.x, onePixel.y));
+
+	// image = mix((image + image1 + image2 + image3) / 4., image, u_sharpness);
+
+	// outColor = image;
+
+	vec4 agents = texture(u_agents, uv);
+	vec4 sync = blurred(u_sync, uv); //texture(u_sync, uv);
+	vec4 trails = texture(u_trails, uv) * 0.2;
+
+	outColor.rgb = agents.rgb + trails.rgb + sync.rgb;
+
+	float gamma = 1.;
 	outColor.rgb = pow(outColor.rgb, vec3(1.0/gamma));
-	
 	outColor.rgb *= areacolors.a;
-
 	outColor.rgb = mix(outColor.rgb, 1.-outColor.rgb, u_invert);
-
+	outColor.a = 1.;
 
 }
 `,{
-	"u_image": [0],
-	"u_data": [1],
-	"u_map": [2],
+	"u_agents": [0],
+	"u_sync": [1],
+	"u_trails": [2],
 	"u_areas": [3],
+
 	"u_color": [1, 1, 1, 1],
 	"u_invert": [slab_composite_invert],
-	"u_showmap": [showmap ? 1 : 0],
+	//"u_showmap": [showmap ? 1 : 0],
+	"u_sharpness": [0.5],
 	"u_aspect": [(1920/1080)/(world.size[0]/world.size[1])],
 	"u_border": [0.03],
 })
@@ -309,7 +367,7 @@ void main() {
 }
 `);
 gl.useProgram(program_agents);
-gl.uniform1f(gl.getUniformLocation(program_agents, "u_pointsize"), 1);
+gl.uniform1f(gl.getUniformLocation(program_agents, "u_pointsize"), 2);
 
 let linesVao = {
 	id: gl.createVertexArray(),
@@ -437,22 +495,14 @@ function update() {
 	if (running) {
 
 		linesVao.count = MAX_LINE_POINTS;
-		
+
+		// capture new particles & lines
 		fbo.begin().clear();
 		{
 			gl.lineWidth(0.1);
 			gl.enable(gl.BLEND);
 			//gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-			// feedback:
-
-			gl.useProgram(program_showtex);
-			world.bg.bind(1);
-			fbo.front.bind(0);
-			let a = 0.993; //0.995;
-			gl.uniform1i(gl.getUniformLocation(program_showtex, "u_tex0"), 0);
-			gl.uniform4f(gl.getUniformLocation(program_showtex, "u_color"), showmap ? 1 : 0, a, a, a);
-			glQuad.bind().draw();
 
 			let viewmat = [
 				2/gl.canvas.width, 0, 0,
@@ -468,10 +518,38 @@ function update() {
 				gl.uniformMatrix3fv(gl.getUniformLocation(program_lines, "u_matrix"), false, viewmat);
 				linesVao.bind().submit().draw();
 			}
-
-			
 		}
-		fbo.end(); 
+		fbo.end();
+
+		// feed into trails:
+		trailfbo.begin().clear();
+		{
+			fbo.front.bind(1);
+			trailfbo.front.bind(0);
+			let a = 0.993; //0.995;
+			slab_trail.use();
+			slab_trail.uniform("u_fade", a);
+			slab_trail.draw();
+		}
+		trailfbo.end();
+
+		// feed into sync lighting:
+		syncfbo.begin().clear();
+		{
+			// gl.lineWidth(0.1);
+			// gl.enable(gl.BLEND);
+			// //gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+			// gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+			// // feedback:
+			fbo.front.bind(1);
+			syncfbo.front.bind(0);
+			let a = 0.7; //0.995;
+			slab_sync.use();
+			slab_sync.uniform("u_fade", a);
+			slab_sync.draw();
+		}
+		syncfbo.end(); 
 	}
 
 	// now draw fbo to glcanvs, for use by ctx
@@ -482,12 +560,15 @@ function update() {
 
 
 	fbo.front.bind(0);
-	world.data.bind(1); //.submit();
-	world.bg.bind(2);
+	syncfbo.front.bind(1)
+	trailfbo.front.bind(2)
 	world.areas.bind(3);
+	//world.bg.bind(2);
+	//world.data.bind(1); //.submit();
 	slab_composite.use();
 	slab_composite.uniform("u_invert", slab_composite_invert);
 	slab_composite.uniform("u_showmap", showmap ? 0.25 : 0);
+	slab_composite.uniform("u_sharpness", sharpness ? 0.25 : 0);
 	slab_composite.draw();
 
 	// fbo.bind().readPixels(); // SLOW!!!

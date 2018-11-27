@@ -7,6 +7,25 @@ rendering:
 ---
 splatting to a context2d makes no difference. 
 switching to a 1920x1080 canvas (and gl-rendering at that resolution) makes no difference
+using a slightly better sampler kernel in slab_composite helped a little
+
+could point sprites help?
+
+OK so our composite needs to be able to balance the appearance of these things:
+- the long-term trails left by agents
+- the immediate pulsing of agents
+- the sporadic connections of agents
+- any bleeding spread of the agents
+
+now separated into different fbos so we can tune more easily:
+- basic fbo captures agents & lines
+- syncfbo captures short term, to emphasize pulsing (add blur?)
+- trailsfbo does long-term feedback
+
+slab_composite takes care of blending them.
+
+if we captured the new agents data into a separate fbo, those could feed into 
+
 
 
 
