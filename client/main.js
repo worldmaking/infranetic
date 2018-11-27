@@ -89,8 +89,8 @@ function resize() {
 	let window_aspect = w/h;
 	let canvas_aspect = world.aspect/window_aspect;
 
-	canvas.style.width = w + "px";
-	canvas.style.height = h + "px";
+	//canvas.style.width = w + "px";
+	//canvas.style.height = h + "px";
 }
 
 let fbo = createFBO(gl, gl.canvas.width, gl.canvas.height, true);
@@ -159,7 +159,7 @@ void main() {
 	vec4 image2 = texture(u_image, uv+vec2(0., onePixel.y));
 	vec4 image3 = texture(u_image, uv+vec2(onePixel.x, onePixel.y));
 
-	image = (image + image1 + image2 + image3) / 4.;
+	image = mix(image, (image + image1 + image2 + image3) / 4., 0.2);
 
 	outColor = image;// * u_color;
 	//outColor.rgb += vec3(ways) * 0.15;
@@ -489,7 +489,7 @@ function update() {
 	slab_composite.use();
 	slab_composite.uniform("u_invert", slab_composite_invert);
 	slab_composite.uniform("u_showmap", showmap ? 0.25 : 0);
-	let aspect = (window.innerWidth/window.innerHeight)/(world.size[0]/world.size[1]);
+	let aspect = (1920/1080)/(world.size[0]/world.size[1]);
 	slab_composite.uniform("u_aspect", aspect);
 	slab_composite.draw();
 

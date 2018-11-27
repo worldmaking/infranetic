@@ -426,18 +426,22 @@ function createQuadVao(gl, program) {
 }
 
 function createSlab(gl, fragCode, uniforms) {
-    let program = makeProgramFromCode(gl, `#version 300 es
+    let vertCode = `#version 300 es
 in vec4 a_position;
 in vec2 a_texCoord;
+uniform vec2 u_scale;
 out vec2 v_texCoord;
 void main() {
     gl_Position = a_position;
+    vec2 adj = vec2(1, -1);
+    gl_Position.xy = (gl_Position.xy + adj)*u_scale.xy - adj;
     v_texCoord = a_texCoord;
-}`, fragCode);
+}`
+    let program = makeProgramFromCode(gl, vertCode, fragCode);
     let self = {
         program: program,
         quad: createQuadVao(gl, program),
-        uniforms: uniformsFromCode(gl, program, fragCode),
+        uniforms: uniformsFromCode(gl, program, vertCode + fragCode),
 
         uniform(name, ...args) {
             this.uniforms[name].set.apply(this, args);
@@ -462,6 +466,8 @@ void main() {
             return this;
         },
     };
+    self.use();
+    self.uniform("u_scale", 1, 1);
     if (uniforms) self.setuniforms(uniforms);
     return self;
 }

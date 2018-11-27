@@ -4,6 +4,11 @@ rendering:
 - make sync visible
 
 
+---
+splatting to a context2d makes no difference. 
+switching to a 1920x1080 canvas (and gl-rendering at that resolution) makes no difference
+
+
 
 show data graph
 - maybe history, replacing 1 box every day or so with a summary
