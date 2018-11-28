@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 903.0, 142.0, 645.0, 579.0 ],
+		"rect" : [ 149.0, 78.0, 645.0, 579.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -87,22 +87,22 @@
 									"Active[2]" : 1.0,
 									"Active[3]" : 1.0,
 									"Active[4]" : 1.0,
-									"Freq[1]" : 4546.408489643978101,
-									"Freq[2]" : 7590.38304835449344,
-									"Freq[3]" : 10170.486501365670847,
+									"Freq[1]" : 3300.787401575102194,
+									"Freq[2]" : 7449.044465677327025,
+									"Freq[3]" : 8333.084926562518376,
 									"Freq[4]" : 13306.442163870837248,
-									"Gain[1]" : -19.961110915828719,
-									"Gain[2]" : -19.961110915828719,
-									"Gain[3]" : -19.961110915828719,
+									"Gain[1]" : -44.370559734726378,
+									"Gain[2]" : -4.213079419765847,
+									"Gain[3]" : -32.559536112679162,
 									"Gain[4]" : -19.961110915828719,
-									"MasterGain" : -3.937007874015748,
+									"MasterGain" : 1.574803149606296,
 									"Q[1]" : 5.089929702831586,
-									"Q[2]" : 5.089929702831586,
-									"Q[3]" : 5.089929702831586,
+									"Q[2]" : 3.920638364248911,
+									"Q[3]" : 8.5198509626741,
 									"Q[4]" : 5.089929702831586,
-									"Type[1]" : 5.0,
-									"Type[2]" : 4.0,
-									"Type[3]" : 4.0,
+									"Type[1]" : 4.0,
+									"Type[2]" : 5.0,
+									"Type[3]" : 6.0,
 									"Type[4]" : 6.0
 								}
 
@@ -130,22 +130,22 @@
 												"Active[2]" : 1.0,
 												"Active[3]" : 1.0,
 												"Active[4]" : 1.0,
-												"Freq[1]" : 4546.408489643978101,
-												"Freq[2]" : 7590.38304835449344,
-												"Freq[3]" : 10170.486501365670847,
+												"Freq[1]" : 3300.787401575102194,
+												"Freq[2]" : 7449.044465677327025,
+												"Freq[3]" : 8333.084926562518376,
 												"Freq[4]" : 13306.442163870837248,
-												"Gain[1]" : -19.961110915828719,
-												"Gain[2]" : -19.961110915828719,
-												"Gain[3]" : -19.961110915828719,
+												"Gain[1]" : -44.370559734726378,
+												"Gain[2]" : -4.213079419765847,
+												"Gain[3]" : -32.559536112679162,
 												"Gain[4]" : -19.961110915828719,
-												"MasterGain" : -3.937007874015748,
+												"MasterGain" : 1.574803149606296,
 												"Q[1]" : 5.089929702831586,
-												"Q[2]" : 5.089929702831586,
-												"Q[3]" : 5.089929702831586,
+												"Q[2]" : 3.920638364248911,
+												"Q[3]" : 8.5198509626741,
 												"Q[4]" : 5.089929702831586,
-												"Type[1]" : 5.0,
-												"Type[2]" : 4.0,
-												"Type[3]" : 4.0,
+												"Type[1]" : 4.0,
+												"Type[2]" : 5.0,
+												"Type[3]" : 6.0,
 												"Type[4]" : 6.0
 											}
 
@@ -158,7 +158,7 @@
 										"filename" : "Max EqParametric4.amxd.maxsnap",
 										"filepath" : "~/Documents/Max 8/Snapshots",
 										"filepos" : -1,
-										"snapshotfileid" : "bd54709c6dff229d6ff38a5598908c12"
+										"snapshotfileid" : "5952ed385db73c21bf96b971e544122e"
 									}
 
 								}
@@ -227,14 +227,14 @@
 					"patching_rect" : [ 25.0, 426.0, 123.0, 47.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
-							"parameter_type" : 0,
-							"parameter_unitstyle" : 4,
-							"parameter_mmin" : -70.0,
-							"parameter_longname" : "live.gain~",
 							"parameter_initial_enable" : 1,
 							"parameter_mmax" : 6.0,
 							"parameter_initial" : [ -3.59055118110237 ],
-							"parameter_shortname" : "live.gain~"
+							"parameter_shortname" : "live.gain~",
+							"parameter_type" : 0,
+							"parameter_unitstyle" : 4,
+							"parameter_mmin" : -70.0,
+							"parameter_longname" : "live.gain~"
 						}
 
 					}
@@ -384,7 +384,7 @@
 								"box" : 								{
 									"code" : "stateidx = counter(1, 0, dim(state));\r\nplay = counter(1, 0, dim(ola));\r\nfreq = 16;\r\ndensity = 16;\r\niot = samplerate/freq;\r\nspawn = change(train(iot)) == 1;\r\n// if time to trigger, write a new grain:\r\nif (spawn) {\r\n\t\r\n\tstart = ceil(play + mstosamps((1+noise()) * 100));\r\n\tlen = ceil(iot*density);\r\n\t\r\n\tx, y, active, reward, r, g, b, rate\r\n\t\t= peek(state, stateidx, 0, channels=8);\r\n\t\r\n\tgain = 2.*reward/sqrt(density);\r\n\tl = x; //abs(noise());\r\n\tr = 1-l;\r\n\tw_phase = 0;\r\n\ts_idx = floor(active*dim(src));\t\r\n\tfor (i=0; i<len; i+=1) {\r\n\t\ts = peek(src, s_idx, \r\n\t\t\tinterp=\"linear\", boundmode=\"wrap\");\r\n\t\ts *= gain * sample(win, i/len, \r\n\t\t\tinterp=\"linear\", boundmode=\"ignore\");\r\n\t\ts_idx += (r-g)*4;\r\n\t\t// overlap add:\r\n\t\tpoke(ola, s*l, start+i, 0, 1, \r\n\t\t\toverdubmode=\"accum\", boundmode=\"wrap\");\r\n\t\tpoke(ola, s*r, start+i, 1, 1, \r\n\t\t\toverdubmode=\"accum\", boundmode=\"wrap\");\n\t}\r\n}\r\n\r\n// zero out:\r\no1, o2 = peek(ola, play, channels=2);\r\nout1 = o1;\r\nout2 = o2;\r\npoke(ola, o1*0.5, play, 0);\r\npoke(ola, o2*0.5, play, 1);\r\n",
 									"fontface" : 0,
-									"fontname" : "Lucida Console",
+									"fontname" : "Menlo",
 									"fontsize" : 12.0,
 									"id" : "obj-7",
 									"maxclass" : "codebox",
@@ -462,7 +462,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 83.0, 500.0, 70.0, 22.0 ],
+					"patching_rect" : [ 83.0, 486.0, 70.0, 22.0 ],
 					"text" : "loadmess 1"
 				}
 
@@ -614,8 +614,8 @@
 			}
  ],
 		"parameters" : 		{
-			"obj-89" : [ "live.gain~", "live.gain~", 0 ],
 			"obj-14" : [ "amxd~", "amxd~", 0 ],
+			"obj-89" : [ "live.gain~", "live.gain~", 0 ],
 			"parameterbanks" : 			{
 
 			}
@@ -625,12 +625,13 @@
 		"dependency_cache" : [ 			{
 				"name" : "Max EqParametric4.amxd.maxsnap",
 				"bootpath" : "~/Documents/Max 8/Snapshots",
+				"patcherrelativepath" : "../../../Documents/Max 8/Snapshots",
 				"type" : "mx@s",
 				"implicit" : 1
 			}
 , 			{
-				"name" : "bin2buf~.mxe64",
-				"type" : "mx64"
+				"name" : "bin2buf~.mxo",
+				"type" : "iLaX"
 			}
  ],
 		"autosave" : 0
