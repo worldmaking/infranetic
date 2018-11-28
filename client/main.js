@@ -56,6 +56,7 @@ let showlines = false;
 let showmap = false;
 let sharpness = 0.5;
 let gamma = 1;
+let composite_mix = [1, 1, 0.25];
 
 canvas.width = world.size[0];
 canvas.height = world.size[1]; 
@@ -246,6 +247,8 @@ uniform float u_border;
 uniform float u_aspect;
 uniform float u_sharpness;
 uniform float u_gamma;
+
+uniform vec3 u_mix;
 in vec2 v_texCoord;
 out vec4 outColor;
 
@@ -279,9 +282,11 @@ void main() {
 	vec4 data = texture(u_data, uv);
 
 	float trailsgamma = 1.2;
-	trails.rgb = pow(trails.rgb, vec3(1.0/trailsgamma)) * 0.25;
+	trails.rgb = pow(trails.rgb, vec3(1.0/trailsgamma));
 
-	outColor.rgb = agents.rgb + trails.rgb + sync.rgb;
+	outColor.rgb = agents.rgb * u_mix.x
+				 + sync.rgb * u_mix.y
+				 + trails.rgb * u_mix.z ;
 
 	outColor.rgb *= areacolors.a;
 	outColor.rgb = mix(outColor.rgb, 1.-outColor.rgb, u_invert);
@@ -299,8 +304,11 @@ void main() {
 	"u_agents": [0],
 	"u_sync": [1],
 	"u_trails": [2],
+	u_mix: composite_mix,
+
 	"u_areas": [3],
 	u_data: [4],
+	
 
 	"u_color": [1, 1, 1, 1],
 	"u_invert": [slab_composite_invert],
@@ -614,6 +622,7 @@ function update() {
   	gl.clear(gl.COLOR_BUFFER_BIT);
 
 
+	composite_mix[2] = 0.3+0.1*Math.sin(fps.t);
 
 	fbo.front.bind(0);
 	syncfbo.front.bind(1)
@@ -623,6 +632,7 @@ function update() {
 	//world.bg.bind(2);
 	//world.data.bind(1); //.submit();
 	slab_composite.use();
+	slab_composite.uniform("u_mix", composite_mix[0], composite_mix[1], composite_mix[2]);
 	slab_composite.uniform("u_invert", slab_composite_invert);
 	slab_composite.uniform("u_showmap", showmap ? 0.25 : 0);
 	slab_composite.uniform("u_sharpness", sharpness ? 0.25 : 0);
