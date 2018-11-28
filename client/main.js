@@ -757,7 +757,9 @@ window.addEventListener("keyup", function(event) {
 	if (event.key == " ") {
 		running = !running;
 	} else if (event.key == "z") {
-		refocus();
+		
+	} else if (event.key == "r") {
+		sock.send({cmd: "reset"});
 	} else if (event.key == "m") {
 		showmap = !showmap; //agents.sort((a, b) => b.reward - a.reward);
 	} else if (event.key == "l") {

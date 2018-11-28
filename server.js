@@ -351,6 +351,10 @@ function handlemessage(msg, session) {
 				console.error(e);
 			}
 		} break;
+		case "reset": {
+			process.exit(-1)
+			break;
+		}
 		default: console.log("received JSON", msg, typeof msg);
 	}
 }

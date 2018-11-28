@@ -44,7 +44,7 @@
             this.network = neato.createNetwork();
         }
 
-        reset_copy(other) {
+        reset_copy(other, world) {
             vec2.copy(this.pos, other.pos);
             vec2.copy(this.fwd, other.fwd);
             vec3.copy(this.scent, other.scent);
@@ -120,8 +120,8 @@
             this.meta.reward = Math.max(this.meta.reward * 0.99, wayfound * marked);
 
             if (this.meta.reward < 0.1) {
-                //this.reset_copy(utils.pick(agents));
-                this.reset(world);
+                this.reset_copy(utils.pick(agents), world);
+                //this.reset(world);
                 return;
             }
             

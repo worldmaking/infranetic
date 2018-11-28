@@ -544,7 +544,7 @@ function update() {
 		
 		
 	}
-	sock.send({"cmd":"getagents"});
+	sock.send({cmd:"getagents"});
 }
 
 
