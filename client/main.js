@@ -13,7 +13,6 @@ if (!ext) {
 	alert("Browser error: need EXT_color_buffer_float");
 }
 
-
 const world = {
 	meters: [34976, 23376], // meters
 	size: [3231, 2160], // pixels
@@ -38,6 +37,13 @@ world.meters_per_pixel = world.meters[1] / world.size[1];
 world.pixels_per_meter = 1/world.meters_per_pixel;
 world.norm = [1/world.size[0], 1/world.size[1]];
 
+const screen = {
+	width: 1920,
+	height: 1080,
+	//width: world.size[0], //1920, 
+	//height: world.size[1] //1080
+}
+
 const NUM_AGENTS = 3000;
 const MAX_NEIGHBOURS = 4;
 const MAX_LINE_POINTS = NUM_AGENTS;
@@ -49,11 +55,14 @@ let running = true;
 let showlines = false;
 let showmap = false;
 let sharpness = 0.5;
+let gamma = 1;
 
 canvas.width = world.size[0];
 canvas.height = world.size[1]; 
 gl.canvas.width = world.size[0];
 gl.canvas.height = world.size[1];
+canvas.style.width = screen.width + "px";
+canvas.style.height = screen.height + "px";
 
 world.data = createPixelTexture(gl, world.size[0], world.size[1], true).load("img/data.png");
 world.areas = createPixelTexture(gl, world.size[0], world.size[1], true).load("img/areas.png");
@@ -89,9 +98,6 @@ function resize() {
 	console.log("window size", w, h);
 	let window_aspect = w/h;
 	let canvas_aspect = world.aspect/window_aspect;
-
-	//canvas.style.width = w + "px";
-	//canvas.style.height = h + "px";
 }
 
 let fbo = createFBO(gl, gl.canvas.width, gl.canvas.height, true);
@@ -239,6 +245,7 @@ uniform float u_showmap;
 uniform float u_border;
 uniform float u_aspect;
 uniform float u_sharpness;
+uniform float u_gamma;
 in vec2 v_texCoord;
 out vec4 outColor;
 
@@ -276,11 +283,10 @@ void main() {
 
 	outColor.rgb = agents.rgb + trails.rgb + sync.rgb;
 
-	float gamma = 1.;
-	outColor.rgb = pow(outColor.rgb, vec3(1.0/gamma));
 	outColor.rgb *= areacolors.a;
 	outColor.rgb = mix(outColor.rgb, 1.-outColor.rgb, u_invert);
 	outColor.a = 1.;
+	outColor.rgb = pow(outColor.rgb, vec3(1.0/u_gamma));
 
 	//float mask = max(0.5,1.-pow(2.*length(vec2(0.5)-uv), 0.5));
 	//outColor.rgb = vec3(mask);
@@ -298,9 +304,10 @@ void main() {
 
 	"u_color": [1, 1, 1, 1],
 	"u_invert": [slab_composite_invert],
+	u_gamma: [1],
 	//"u_showmap": [showmap ? 1 : 0],
 	"u_sharpness": [0.5],
-	"u_aspect": [(1920/1080)/(world.size[0]/world.size[1])],
+	"u_aspect": [(screen.width/screen.height)/(world.size[0]/world.size[1])],
 	"u_border": [0.03],
 })
 
@@ -619,6 +626,7 @@ function update() {
 	slab_composite.uniform("u_invert", slab_composite_invert);
 	slab_composite.uniform("u_showmap", showmap ? 0.25 : 0);
 	slab_composite.uniform("u_sharpness", sharpness ? 0.25 : 0);
+	slab_composite.uniform("u_gamma", gamma);
 	slab_composite.draw();
 
 	// fbo.bind().readPixels(); // SLOW!!!
