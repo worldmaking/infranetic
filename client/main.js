@@ -52,7 +52,7 @@ let agents = [];
 let fps = new utils.FPS();
 let running = true;
 
-let showlines = false;
+let showlines = true;
 let showmap = false;
 let sharpness = 0.5;
 let gamma = 1;
@@ -157,44 +157,79 @@ void main() {
 
 let syncfbo = createFBO(gl, gl.canvas.width, gl.canvas.height, true);
 let slab_sync = createSlab(gl, `#version 300 es
-precision mediump float;
+precision highp float;
 uniform sampler2D u_tex0;
 uniform sampler2D u_tex1;
+uniform sampler2D u_tex4;
 uniform float u_fade;
 in vec2 v_texCoord;
 out vec4 outColor;
+
+
+vec4 blur(sampler2D img, vec2 uv) {
+	float r = 2.;
+	vec2 s = vec2(r/3231., r/2160.);
+	vec4 p = vec4(s.x, s.y, -s.x, -s.y);
+	float a = 0.25;
+	float b = 0.5;
+	return (
+		texture(img, uv+(p.xy))
+		+ texture(img, uv+(p.zw))
+		+ texture(img, uv+(p.zy))
+		+ texture(img, uv+(p.xw))
+	) * 0.25;
+}
+
 void main() {
-	vec4 tex0 = texture(u_tex0, v_texCoord);
+	vec4 data = texture(u_tex4, v_texCoord);
+	float block = (1. - data.r);
+	float fade =  mix(u_fade, 0.995, clamp((data.b+data.g)*3.-0.5, 0., 1.));
+
+	//vec4 tex0 = texture(u_tex0, v_texCoord);
 	vec4 tex1 = texture(u_tex1, v_texCoord);
-	outColor.rgb = tex0.rgb * (u_fade) + tex1.rgb;
+
+
+
+	outColor.rgb = blur(u_tex0, v_texCoord).rgb * fade;
+
+	outColor.rgb = max(outColor.rgb, tex1.rgb);
+
+	// block by buildings:
+	vec3 blocked = min(outColor.rgb, block);
+	outColor.rgb = mix(outColor.rgb, blocked, 0.25);
+
 	outColor.a = 1.;
 
 }
 `,{
 	"u_tex0": [0],
 	"u_tex1": [1],
+	u_tex4: [4],
 	"u_fade": [0.99],
 });
 
 let trailfbo = createFBO(gl, gl.canvas.width, gl.canvas.height, true);
 let slab_trail = createSlab(gl, `#version 300 es
-precision mediump float;
+precision highp float;
 uniform sampler2D u_tex0;
 uniform sampler2D u_tex1;
+uniform sampler2D u_tex4;
 uniform float u_fade;
 in vec2 v_texCoord;
 out vec4 outColor;
 void main() {
 	vec3 tex0 = texture(u_tex0, v_texCoord).rgb;
 	vec3 tex1 = texture(u_tex1, v_texCoord).rgb;
+	vec4 data = texture(u_tex4, v_texCoord);
 	float avg = length(tex0.r + tex0.g + tex0.b)/3.;
-	vec3 col = tex0.rgb; //mix(vec3(avg), tex0.rgb, 0.99);
+	vec3 col = mix(vec3(avg), tex0.rgb, u_fade);
 	outColor.rgb = col*u_fade + tex1.rgb;
 	outColor.a = 1.;
 }
 `,{
 	"u_tex0": [0],
 	"u_tex1": [1],
+	u_tex4: [4],
 	"u_fade": [0.99],
 });
 
@@ -238,19 +273,35 @@ uniform sampler2D u_trails;
 uniform sampler2D u_areas;
 uniform sampler2D u_data;
 
+uniform mat3 u_final;
+
 // uniform sampler2D u_image;
 // uniform sampler2D u_map;
 uniform vec4 u_color;
 uniform float u_invert;
 uniform float u_showmap;
-uniform float u_border;
-uniform float u_aspect;
 uniform float u_sharpness;
 uniform float u_gamma;
 
 uniform vec3 u_mix;
 in vec2 v_texCoord;
 out vec4 outColor;
+
+vec4 blur(sampler2D img, vec2 uv) {
+	float r = 1.;
+	vec2 s = vec2(r/3231., r/2160.);
+	vec4 p = vec4(s.x, s.y, -s.x, -s.y);
+	float a = 0.25;
+	float b = 0.5;
+	vec4 bl = (
+		texture(img, uv+(p.xy))
+		+ texture(img, uv+(p.zw))
+		+ texture(img, uv+(p.zy))
+		+ texture(img, uv+(p.xw))
+	) * 0.25;
+	return mix(bl, texture(img, uv), u_sharpness);
+}
+
 
 vec4 blurred(sampler2D img, vec2 uv) {
 	vec2 texSize = vec2(3231, 2160);
@@ -264,7 +315,8 @@ vec4 blurred(sampler2D img, vec2 uv) {
 }
 
 void main() {
-	vec2 uv = (v_texCoord.xy*2.-1.) * (1. + u_border*2.) * vec2(u_aspect, 1.) * 0.5 + 0.5;
+
+	vec2 uv = (u_final * vec3(v_texCoord.xy, 1)).xy;
 	vec2 uv1 = vec2(uv.x, 1.-uv.y);
 
 	// vec4 data = texture(u_data, uv1);
@@ -276,33 +328,23 @@ void main() {
 	vec4 areacolors = texture(u_areas, uv1);
 
 	vec4 agents = texture(u_agents, uv);
-	vec4 sync = blurred(u_sync, uv); //texture(u_sync, uv);
-	vec4 trails = texture(u_trails, uv);
+	vec4 sync = blur(u_sync, uv); //texture(u_sync, uv);
+	vec4 trails = blur(u_trails, uv);
 
 	vec4 data = texture(u_data, uv);
 
 	float trailsgamma = 1.2;
-	trails.rgb = pow(trails.rgb, vec3(1.0/trailsgamma)) * 0.25;
-	float ttt = min(trails.r, min(trails.g, trails.b)) * 0.66;
-	//trails.rgb = mix(trails.rgb, vec3(ttt), u_mix.z);
+	trails.rgb = pow(trails.rgb, vec3(1.0/trailsgamma)) * u_mix.z;
 
 	float aaa = max(agents.r, max(agents.b, agents.g));
-
-	outColor.rgb = vec3(aaa) 
-				 + sync.rgb 
-				 + trails.rgb ;
-
+	outColor.rgb = max(sync.rgb + trails.rgb, aaa); 
 	outColor.rgb *= areacolors.a;
 	outColor.rgb = mix(outColor.rgb, 1.-outColor.rgb, u_invert);
 	outColor.a = 1.;
 	outColor.rgb = pow(outColor.rgb, vec3(1.0/u_gamma));
 
-	//float mask = max(0.5,1.-pow(2.*length(vec2(0.5)-uv), 0.5));
-	//outColor.rgb = vec3(mask);
-	//outColor.rgb = max(outColor.rgb, vec3(data.g) * mask);
 
 	//outColor = sync;
-
 }
 `,{
 	"u_agents": [0],
@@ -319,8 +361,6 @@ void main() {
 	u_gamma: [1],
 	//"u_showmap": [showmap ? 1 : 0],
 	"u_sharpness": [0.5],
-	"u_aspect": [(screen.width/screen.height)/(world.size[0]/world.size[1])],
-	"u_border": [0.03],
 })
 
 
@@ -436,7 +476,7 @@ void main() {
 	outColor = color; //vec4(0, 0.5, 1, 1);
 	outColor.rgb *= outColor.a;
 	vec3 c = color.rgb;
-	float a = 0.3 + color.a*color.a;
+	float a = 0.4 + color.a*color.a;
 	outColor = vec4(c * a, 1);
 }
 `);
@@ -537,9 +577,11 @@ precision mediump float;
 in vec4 color;
 out vec4 outColor;
 void main() {
-	vec3 c = mix(color.rgb, vec3(1.), 0.9);
-	outColor = vec4(c, color.a * 0.1);
+	float a = (color.r+color.g+color.b)*0.3;
+	vec3 c = mix(vec3(a), color.rgb, color.a);
+	//outColor = vec4(c, color.a * 0.5);
 	//outColor = vec4(color.a * 0.5);
+	outColor = vec4(c, color.a*color.a);
 }
 `);
 for (let i=0; i<linesVao.indices.length; i++) {
@@ -566,59 +608,78 @@ function update() {
 
 	let t = fps.t;
 
-	if (running) {
+	// takes 0..1 uvs and maps them to screen space
+	let finalmat = mat3.create();
+	let finalsize = 0.97;
+	let fx = (world.size[0] / screen.width[0]);
+	let ratio = (screen.width/screen.height)/(world.size[0]/world.size[1]);
+	mat3.translate(finalmat, finalmat, vec2.fromValues(0.5*ratio, 0.5))
+	mat3.scale(finalmat, finalmat, vec2.fromValues(1/finalsize, 1/finalsize));
+	mat3.scale(finalmat, finalmat, vec2.fromValues(ratio, 1));
+	mat3.translate(finalmat, finalmat, vec2.fromValues(-0.5*ratio, -0.5))
+	
+	let invfinalmat = mat3.invert(mat3.create(), finalmat);
+	
+	let viewmat = [
+		2/world.size[0], 0, 0,
+		0, -2/world.size[1], 0,
+		-1, 1, 1
+	];
 
-		linesVao.count = MAX_LINE_POINTS;
+	viewmat = mat3.create();
+	mat3.translate(viewmat, viewmat, vec2.fromValues(-1, 1));
+	mat3.scale(viewmat, viewmat, vec2.fromValues(2/world.size[0], -2/world.size[1]));
 
-		// capture new particles & lines
-		fbo.begin().clear();
-		{
-			gl.lineWidth(0.1);
-			gl.enable(gl.BLEND);
-			//gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+	
+	let viewmat2 = mat3.create();
+	let tt = .034;
+	mat3.scale(viewmat2, viewmat2, vec2.fromValues(1/ratio, 1));//, viewmat)
+	mat3.translate(viewmat2, viewmat2, vec2.fromValues(tt*ratio, 0));
+	mat3.scale(viewmat2, viewmat2, vec2.fromValues(finalsize, finalsize));
 
-			let viewmat = [
-				2/gl.canvas.width, 0, 0,
-				0, -2/gl.canvas.height, 0,
-				-1, 1, 1
-			];
-			gl.useProgram(program_agents);
-			gl.uniformMatrix3fv(gl.getUniformLocation(program_agents, "u_matrix"), false, viewmat);
-			agentsVao.bind().submit(agentsVao.positions).draw();
+	// turn world coordinates into NDC:
+	mat3.translate(viewmat2, viewmat2, vec2.fromValues(-1, 1));
+	mat3.scale(viewmat2, viewmat2, vec2.fromValues(2/world.size[0], -2/world.size[1]));
 
-			if (showlines) {
-				gl.useProgram(program_lines);
-				gl.uniformMatrix3fv(gl.getUniformLocation(program_lines, "u_matrix"), false, viewmat);
-				linesVao.bind().submit().draw();
-			}
-		}
-		fbo.end();
+	// capture new particles & lines
+	fbo.begin().clear();
+	{
+		gl.lineWidth(0.1);
+		gl.enable(gl.BLEND);
+		//gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-		// feed into trails:
-		trailfbo.begin().clear();
-		{
-			fbo.front.bind(1);
-			trailfbo.front.bind(0);
-			let a = 0.998; //0.995;
-			slab_trail.use();
-			slab_trail.uniform("u_fade", a);
-			slab_trail.draw();
-		}
-		trailfbo.end();
+		gl.useProgram(program_agents);
+		gl.uniformMatrix3fv(gl.getUniformLocation(program_agents, "u_matrix"), false, viewmat);
+		agentsVao.bind().submit(agentsVao.positions).draw();
 
-		// feed into sync lighting:
-		syncfbo.begin().clear();
-		{
-			syncfbo.front.bind(0);
-			fbo.front.bind(1);
-			//slab_blur.use().uniform("u_fade", 0.7);
-			//slab_blur.draw();
-			slab_sync.use().uniform("u_fade", 0.7);
-			slab_sync.draw();
-		}
-		syncfbo.end(); 
 	}
+	fbo.end();
+
+	// feed into trails:
+	trailfbo.begin().clear();
+	{
+		fbo.front.bind(1);
+		trailfbo.front.bind(0);
+		world.data.bind(4);
+		slab_trail.use();
+		slab_trail.uniform("u_fade", 0.997);
+		slab_trail.draw();
+	}
+	trailfbo.end();
+
+	// feed into sync lighting:
+	syncfbo.begin().clear();
+	{
+		syncfbo.front.bind(0);
+		fbo.front.bind(1);
+		world.data.bind(4);
+		slab_sync.use().uniform("u_fade", 0.96);
+		slab_sync.draw();
+
+		
+	}
+	syncfbo.end(); 
 
 	// now draw fbo to glcanvs, for use by ctx
 	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -626,7 +687,7 @@ function update() {
   	gl.clear(gl.COLOR_BUFFER_BIT);
 
 
-	composite_mix[2] = 0.5+0.25*Math.sin(fps.t);
+	composite_mix[2] = 0.17+0.03*Math.sin(fps.t * 0.5);
 
 	fbo.front.bind(0);
 	syncfbo.front.bind(1)
@@ -641,7 +702,17 @@ function update() {
 	slab_composite.uniform("u_showmap", showmap ? 0.25 : 0);
 	slab_composite.uniform("u_sharpness", sharpness ? 0.25 : 0);
 	slab_composite.uniform("u_gamma", gamma);
+	gl.uniformMatrix3fv(gl.getUniformLocation(slab_composite.program, "u_final"), false, finalmat);		
 	slab_composite.draw();
+
+	
+	if (showlines) {
+		gl.useProgram(program_lines);
+		gl.uniformMatrix3fv(gl.getUniformLocation(program_lines, "u_matrix"), false, viewmat2);
+		
+		linesVao.count = MAX_LINE_POINTS;
+		linesVao.bind().submit().draw();
+	}
 
 	// fbo.bind().readPixels(); // SLOW!!!
 

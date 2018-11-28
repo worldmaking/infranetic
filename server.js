@@ -103,7 +103,7 @@ const world = {
 	// coordinates of the ACC in this space
 	acc: [2382, 1162],
 
-	ways: new ArrayFromImg(path.join(client_path, "img", 'ways5.png')),
+	ways: new ArrayFromImg(path.join(client_path, "img", 'ways6.png')),
 	areas: new ArrayFromImg(path.join(client_path, "img", 'areas.png')),
 	data: new ArrayFromImg(path.join(client_path, "img", 'data.png')),
 
@@ -136,7 +136,7 @@ let agents = [];
 let space = new SpaceHash({
 	width: world.size[0],
 	height: world.size[1],
-	cellSize: 16
+	cellSize: 20
 });
 world.agents = agents;
 
