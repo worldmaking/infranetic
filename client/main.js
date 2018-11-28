@@ -187,7 +187,7 @@ void main() {
 	vec3 tex0 = texture(u_tex0, v_texCoord).rgb;
 	vec3 tex1 = texture(u_tex1, v_texCoord).rgb;
 	float avg = length(tex0.r + tex0.g + tex0.b)/3.;
-	vec3 col = mix(vec3(avg), tex0.rgb, 0.99);
+	vec3 col = tex0.rgb; //mix(vec3(avg), tex0.rgb, 0.99);
 	outColor.rgb = col*u_fade + tex1.rgb;
 	outColor.a = 1.;
 }
@@ -281,7 +281,9 @@ void main() {
 	float trailsgamma = 1.2;
 	trails.rgb = pow(trails.rgb, vec3(1.0/trailsgamma)) * 0.25;
 
-	outColor.rgb = agents.rgb + trails.rgb + sync.rgb;
+	float aaa = max(agents.r, max(agents.b, agents.g));
+
+	outColor.rgb = vec3(aaa) + trails.rgb + sync.rgb;
 
 	outColor.rgb *= areacolors.a;
 	outColor.rgb = mix(outColor.rgb, 1.-outColor.rgb, u_invert);

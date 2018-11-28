@@ -88,7 +88,7 @@ class ArrayFromImg {
 ////////////////////////
 
 const NUM_AGENTS = 3000;
-const MAX_NEIGHBOURS = 4;
+const MAX_NEIGHBOURS = 6;
 const MAX_LINE_POINTS = NUM_AGENTS;//*MAX_NEIGHBOURS;
 let lineidx = 0;
 
@@ -136,7 +136,7 @@ let agents = [];
 let space = new SpaceHash({
 	width: world.size[0],
 	height: world.size[1],
-	cellSize: 32
+	cellSize: 16
 });
 world.agents = agents;
 
