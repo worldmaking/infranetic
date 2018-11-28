@@ -258,14 +258,14 @@
 					"patching_rect" : [ 25.0, 426.0, 123.0, 47.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
-							"parameter_initial_enable" : 1,
-							"parameter_mmax" : 6.0,
-							"parameter_initial" : [ -3.59055118110237 ],
 							"parameter_shortname" : "live.gain~",
 							"parameter_type" : 0,
 							"parameter_unitstyle" : 4,
 							"parameter_mmin" : -70.0,
-							"parameter_longname" : "live.gain~"
+							"parameter_longname" : "live.gain~",
+							"parameter_initial_enable" : 1,
+							"parameter_mmax" : 6.0,
+							"parameter_initial" : [ -3.59055118110237 ]
 						}
 
 					}
@@ -654,6 +654,13 @@
 		}
 ,
 		"dependency_cache" : [ 			{
+				"name" : "audio.maxsnap",
+				"bootpath" : "~/Documents/Max 8/Snapshots",
+				"patcherrelativepath" : "../../../Documents/Max 8/Snapshots",
+				"type" : "mx@s",
+				"implicit" : 1
+			}
+, 			{
 				"name" : "Max EqParametric4.amxd.maxsnap",
 				"bootpath" : "~/Documents/Max 8/Snapshots",
 				"patcherrelativepath" : "../../../Documents/Max 8/Snapshots",
@@ -672,7 +679,153 @@
 				"type" : "iLaX"
 			}
  ],
-		"autosave" : 0
+		"autosave" : 0,
+		"snapshot" : 		{
+			"filetype" : "C74Snapshot",
+			"version" : 2,
+			"minorversion" : 0,
+			"name" : "snapshotlist",
+			"origin" : "jpatcher",
+			"type" : "list",
+			"subtype" : "Undefined",
+			"embed" : 1,
+			"snapshot" : 			{
+				"valuedictionary" : 				{
+					"parameter_values" : 					{
+						"live.gain~" : -3.59055118110237,
+						"blob" : 						{
+							"amxd~" : [ 								{
+									"filetype" : "C74Snapshot",
+									"version" : 2,
+									"minorversion" : 0,
+									"name" : "Max EqParametric4.amxd",
+									"origin" : "Max EqParametric4.amxd",
+									"type" : "amxd",
+									"subtype" : "Undefined",
+									"embed" : 1,
+									"snapshot" : 									{
+										"name" : "Max EqParametric4.amxd",
+										"origname" : "C74:/packages/Max for Live/patchers/Max Audio Effect/Max EqParametric4/Max EqParametric4.amxd",
+										"valuedictionary" : 										{
+											"parameter_values" : 											{
+												"Active[1]" : 1.0,
+												"Active[2]" : 1.0,
+												"Active[3]" : 1.0,
+												"Active[4]" : 1.0,
+												"Freq[1]" : 3300.787401575102194,
+												"Freq[2]" : 7449.044465677327025,
+												"Freq[3]" : 8333.084926562518376,
+												"Freq[4]" : 13306.442163870837248,
+												"Gain[1]" : -44.370559734726378,
+												"Gain[2]" : -4.213079419765847,
+												"Gain[3]" : -32.559536112679162,
+												"Gain[4]" : -19.961110915828719,
+												"MasterGain" : 1.574803149606296,
+												"Q[1]" : 5.089929702831586,
+												"Q[2]" : 3.920638364248911,
+												"Q[3]" : 8.5198509626741,
+												"Q[4]" : 5.089929702831586,
+												"Type[1]" : 4.0,
+												"Type[2]" : 5.0,
+												"Type[3]" : 6.0,
+												"Type[4]" : 6.0
+											}
+
+										}
+
+									}
+
+								}
+ ]
+						}
+
+					}
+
+				}
+
+			}
+,
+			"snapshotlist" : 			{
+				"current_snapshot" : 0,
+				"entries" : [ 					{
+						"filetype" : "C74Snapshot",
+						"version" : 2,
+						"minorversion" : 0,
+						"name" : "audio",
+						"origin" : "audio",
+						"type" : "patcher",
+						"subtype" : "Undefined",
+						"embed" : 0,
+						"snapshot" : 						{
+							"valuedictionary" : 							{
+								"parameter_values" : 								{
+									"live.gain~" : -3.59055118110237,
+									"blob" : 									{
+										"amxd~" : [ 											{
+												"filetype" : "C74Snapshot",
+												"version" : 2,
+												"minorversion" : 0,
+												"name" : "Max EqParametric4.amxd",
+												"origin" : "Max EqParametric4.amxd",
+												"type" : "amxd",
+												"subtype" : "Undefined",
+												"embed" : 1,
+												"snapshot" : 												{
+													"name" : "Max EqParametric4.amxd",
+													"origname" : "C74:/packages/Max for Live/patchers/Max Audio Effect/Max EqParametric4/Max EqParametric4.amxd",
+													"valuedictionary" : 													{
+														"parameter_values" : 														{
+															"Active[1]" : 1.0,
+															"Active[2]" : 1.0,
+															"Active[3]" : 1.0,
+															"Active[4]" : 1.0,
+															"Freq[1]" : 3300.787401575102194,
+															"Freq[2]" : 7449.044465677327025,
+															"Freq[3]" : 8333.084926562518376,
+															"Freq[4]" : 13306.442163870837248,
+															"Gain[1]" : -44.370559734726378,
+															"Gain[2]" : -4.213079419765847,
+															"Gain[3]" : -32.559536112679162,
+															"Gain[4]" : -19.961110915828719,
+															"MasterGain" : 1.574803149606296,
+															"Q[1]" : 5.089929702831586,
+															"Q[2]" : 3.920638364248911,
+															"Q[3]" : 8.5198509626741,
+															"Q[4]" : 5.089929702831586,
+															"Type[1]" : 4.0,
+															"Type[2]" : 5.0,
+															"Type[3]" : 6.0,
+															"Type[4]" : 6.0
+														}
+
+													}
+
+												}
+
+											}
+ ]
+									}
+
+								}
+
+							}
+
+						}
+,
+						"fileref" : 						{
+							"name" : "audio",
+							"filename" : "audio.maxsnap",
+							"filepath" : "~/Documents/Max 8/Snapshots",
+							"filepos" : -1,
+							"snapshotfileid" : "612bf4929fdaa8764ad7d99a690ba9de"
+						}
+
+					}
+ ]
+			}
+
+		}
+
 	}
 
 }
