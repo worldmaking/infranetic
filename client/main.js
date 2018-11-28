@@ -229,9 +229,9 @@ uniform sampler2D u_agents;
 uniform sampler2D u_sync;
 uniform sampler2D u_trails;
 uniform sampler2D u_areas;
+uniform sampler2D u_data;
 
 // uniform sampler2D u_image;
-// uniform sampler2D u_data;
 // uniform sampler2D u_map;
 uniform vec4 u_color;
 uniform float u_invert;
@@ -269,6 +269,8 @@ void main() {
 	vec4 sync = blurred(u_sync, uv); //texture(u_sync, uv);
 	vec4 trails = texture(u_trails, uv);
 
+	vec4 data = texture(u_data, uv);
+
 	float trailsgamma = 1.2;
 	trails.rgb = pow(trails.rgb, vec3(1.0/trailsgamma)) * 0.25;
 
@@ -280,6 +282,10 @@ void main() {
 	outColor.rgb = mix(outColor.rgb, 1.-outColor.rgb, u_invert);
 	outColor.a = 1.;
 
+	//float mask = max(0.5,1.-pow(2.*length(vec2(0.5)-uv), 0.5));
+	//outColor.rgb = vec3(mask);
+	//outColor.rgb = max(outColor.rgb, vec3(data.g) * mask);
+
 	//outColor = sync;
 
 }
@@ -288,6 +294,7 @@ void main() {
 	"u_sync": [1],
 	"u_trails": [2],
 	"u_areas": [3],
+	u_data: [4],
 
 	"u_color": [1, 1, 1, 1],
 	"u_invert": [slab_composite_invert],
@@ -605,6 +612,7 @@ function update() {
 	syncfbo.front.bind(1)
 	trailfbo.front.bind(2)
 	world.areas.bind(3);
+	world.data.bind(4);
 	//world.bg.bind(2);
 	//world.data.bind(1); //.submit();
 	slab_composite.use();

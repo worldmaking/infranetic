@@ -131,7 +131,7 @@
             let color = [0, 0, 0, 0];
             world.ways.readInto(s1[0], s1[1], color);
 
-            if (Math.random()*0.1 >= color[3]) {
+            if (Math.random() >= color[3]) {
                 this.reset(world);
                 return;
             }
