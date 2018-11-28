@@ -54,7 +54,7 @@ let running = true;
 
 let showlines = true;
 let showmap = false;
-let sharpness = 0.5;
+let sharpness = 0.8;
 let gamma = 1;
 let composite_mix = [1, 1, 0.25];
 
@@ -663,7 +663,7 @@ function update() {
 		trailfbo.front.bind(0);
 		world.data.bind(4);
 		slab_trail.use();
-		slab_trail.uniform("u_fade", 0.997);
+		slab_trail.uniform("u_fade", 0.998);
 		slab_trail.draw();
 	}
 	trailfbo.end();
@@ -700,7 +700,7 @@ function update() {
 	slab_composite.uniform("u_mix", composite_mix[0], composite_mix[1], composite_mix[2]);
 	slab_composite.uniform("u_invert", slab_composite_invert);
 	slab_composite.uniform("u_showmap", showmap ? 0.25 : 0);
-	slab_composite.uniform("u_sharpness", sharpness ? 0.25 : 0);
+	slab_composite.uniform("u_sharpness", sharpness);
 	slab_composite.uniform("u_gamma", gamma);
 	gl.uniformMatrix3fv(gl.getUniformLocation(slab_composite.program, "u_final"), false, finalmat);		
 	slab_composite.draw();
