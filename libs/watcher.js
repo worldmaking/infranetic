@@ -41,7 +41,7 @@
                     let difference = vec3.angle(self.scent, n.scent);
 
                     // difference as a measure of discovery
-                    this.diff = difference;
+                    this.difference = difference;
 
                     if (Math.random() < (this.zoom * difference * (n.active - self.active))) {
                         this.agent = n.id;
