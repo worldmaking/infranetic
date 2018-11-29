@@ -581,7 +581,7 @@ void main() {
 	vec3 c = mix(vec3(a), color.rgb, color.a);
 	//outColor = vec4(c, color.a * 0.5);
 	//outColor = vec4(color.a * 0.5);
-	outColor = vec4(c, color.a*color.a);
+	outColor = vec4(c, color.a);
 }
 `);
 for (let i=0; i<linesVao.indices.length; i++) {
