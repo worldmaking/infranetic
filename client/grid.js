@@ -559,19 +559,21 @@ canvas.addEventListener("mousedown", function(event) {
 
 window.addEventListener("keyup", function(event) {
 	//print(event.key);
-	if (event.key == " ") {
+	if (event.key == "z") {
+		
+	} else if (event.key == " ") {
 		running = !running;
-	} else if (event.key == "z") {
-		refocus();
-	} else if (event.key == "m") {
-		agents.sort((a, b) => b.reward - a.reward);
-	} else if (event.key == "l") {
-		showlines = !showlines;
-	} else if (event.key == "i") {
-		slab_composite_invert = (slab_composite_invert) ? 0 : 1;
-	} else if (event.key == "s") {
-		// `frame${frame.toString().padStart(5, '0')}.png`;
-		saveCanvasToPNG(canvas, "result");
+	} else if (event.key == "r") {
+		sock.send({cmd: "reset"});
+	// } else if (event.key == "m") {
+	// 	showmap = !showmap; //agents.sort((a, b) => b.reward - a.reward);
+	// } else if (event.key == "l") {
+	// 	showlines = !showlines;
+	// } else if (event.key == "i") {
+	// 	slab_composite_invert = (slab_composite_invert) ? 0 : 1;
+	// } else if (event.key == "s") {
+	// 	// `frame${frame.toString().padStart(5, '0')}.png`;
+	// 	saveCanvasToPNG(canvas, "result");
 	} else if (event.key == 'f') {
 		if (screenfull.enabled) {
 			screenfull.toggle(document.body);
@@ -579,6 +581,7 @@ window.addEventListener("keyup", function(event) {
 		}
 	}
 }, false);
+
 
 /////////////////////////////////////////////////////////////
 
