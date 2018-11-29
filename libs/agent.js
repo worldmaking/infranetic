@@ -120,8 +120,8 @@
             this.meta.reward = Math.max(this.meta.reward * 0.99, wayfound * marked);
 
             if (this.meta.reward < 0.1) {
-                this.reset_copy(utils.pick(agents), world);
-                //this.reset(world);
+                //this.reset_copy(utils.pick(agents), world);
+                this.reset(world);
                 return;
             }
             
