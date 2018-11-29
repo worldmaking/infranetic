@@ -55,7 +55,7 @@ let running = true;
 let showlines = true;
 let showmap = false;
 let sharpness = 0.8;
-let gamma = 1;
+let gamma = 1.5;
 let composite_mix = [1, 1, 0.25];
 
 canvas.width = world.size[0];
@@ -598,7 +598,7 @@ function refocus() {
 }
 
 let dirty = false;
-
+let capture = 0;
 function update() {
 	requestAnimationFrame(update);
 
@@ -740,8 +740,11 @@ function update() {
 		//refocus();
 		//agents.sort((a, b) => b.reward - a.reward);
 	}
-}
 
+	// if (fps.t % 1 < fps.dt) {
+	// 	webutils.saveCanvasToPNG(gl.canvas, "capture"+ (capture++));
+	// }
+}
 
 window.addEventListener("resize", resize, false);
 

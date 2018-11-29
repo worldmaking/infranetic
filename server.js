@@ -32,7 +32,9 @@ console.log("client_path", client_path);
 {
 	let stdin = process.stdin;
 	// without this, we would only get streams once enter is pressed
-	stdin.setRawMode( true );
+	if (process.stdin.setRawMode){
+		process.stdin.setRawMode(true)
+	}
 	// resume stdin in the parent process (node app won't quit all by itself
 	// unless an error or process.exit() happens)
 	stdin.resume();

@@ -31,8 +31,8 @@ const world = {
 	// coordinates of the ACC in this space
 	acc: [2382, 1162],
 
-	ways: new ArrayFromImg('img/ways2.png'),
-	areas: new ArrayFromImg('img/areas.png'),
+	ways: new webutils.ArrayFromImg('img/ways2.png'),
+	areas: new webutils.ArrayFromImg('img/areas.png'),
 
 	idx(pos) {
 		return Math.floor(pos[1])*this.size[0] + Math.floor(pos[0]);
