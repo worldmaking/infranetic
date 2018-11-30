@@ -62,8 +62,8 @@ canvas.width = world.size[0];
 canvas.height = world.size[1]; 
 gl.canvas.width = world.size[0];
 gl.canvas.height = world.size[1];
-canvas.style.width = screen.width + "px";
-canvas.style.height = screen.height + "px";
+//canvas.style.width = screen.width + "px";
+//canvas.style.height = screen.height + "px";
 
 world.data = createPixelTexture(gl, world.size[0], world.size[1], true).load("img/data.png");
 world.areas = createPixelTexture(gl, world.size[0], world.size[1], true).load("img/areas.png");
