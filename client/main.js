@@ -328,7 +328,7 @@ void main() {
 	vec4 areacolors = texture(u_areas, uv1);
 
 	vec4 agents = texture(u_agents, uv);
-	vec4 sync = blur(u_sync, uv); //texture(u_sync, uv);
+	vec4 sync = blur(u_sync, uv); //texture(u_sync, uv) * 0.7;
 	vec4 trails = blur(u_trails, uv);
 
 	vec4 data = texture(u_data, uv);
@@ -663,7 +663,7 @@ function update() {
 		trailfbo.front.bind(0);
 		world.data.bind(4);
 		slab_trail.use();
-		slab_trail.uniform("u_fade", 0.998);
+		slab_trail.uniform("u_fade", 0.997);
 		slab_trail.draw();
 	}
 	trailfbo.end();
