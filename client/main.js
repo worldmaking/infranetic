@@ -55,7 +55,7 @@ let running = true;
 let showlines = true;
 let showmap = false;
 let sharpness = 0.8;
-let gamma = 1.5;
+let gamma = 2.27;
 let composite_mix = [1, 1, 0.25];
 
 canvas.width = world.size[0];
