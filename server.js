@@ -12,7 +12,7 @@ const WebSocket = require('ws');
 const PNG = require("pngjs").PNG;
 const { vec2, vec3 } = require("gl-matrix");
 
-const mmapfile = require('./'+process.platform+'/mmapfile');
+//const mmapfile = require('./'+process.platform+'/mmapfile');
 
 const utils = require("./libs/utils.js");
 const neataptic = require("./libs/neataptic.js");
@@ -175,7 +175,7 @@ let audioLoopSeconds = 2;
 let audioChannels = 8;
 
 // open a file for read/write & map to a Buffer
-let buf = mmapfile.openSync("audio/audiostate.bin", audioChannels*NUM_AGENTS*floatBytes, "r+");	
+let buf = new Float32Array(audioChannels*NUM_AGENTS) //mmapfile.openSync("audio/audiostate.bin", audioChannels*NUM_AGENTS*floatBytes, "r+");	
 let audiostate = new Float32Array(buf.buffer);
 console.log("audiostate.byteLength", audiostate.byteLength); // 8
 // console.log(buf.toString('ascii')); // "--------"
